@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">My Application</string>
+
+    <string name="api_baseURL">http://192.168.76.253:8080/</string>
+
+    <string name="nav_home">home</string>
+    <string name="nav_capture">Capture</string>
+    <string name="nav_chat">Chat</string>
+    <string name="nav_fertilizer">Fertilizer</string>
+    <string name="nav_dev">Developer</string>
+</resources>
