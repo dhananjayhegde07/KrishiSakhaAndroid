@@ -37,7 +37,8 @@ fun Home(navController: NavController,nav:androidx.compose.runtime.MutableState<
             )
     ) {
         Icon(painter = painterResource(R.drawable.home_angle_svgrepo_com), contentDescription = "home",
-            modifier = Modifier.scale(.5f))
+            tint = if (nav.value=="home") Color(0xFF008000) else Color.Black,
+            modifier = Modifier.scale(.4f))
     }
 }
 
@@ -59,7 +60,8 @@ fun Capture(navController: NavController, nav:androidx.compose.runtime.MutableSt
             )
     ) {
         Icon(painter = painterResource(R.drawable.file_send_svgrepo_com), contentDescription = "home",
-            modifier = Modifier.scale(.5f))
+            tint = if (nav.value=="camera") Color(0xFF008000) else Color.Black,
+            modifier = Modifier.scale(.4f))
 
     }
 }
@@ -80,8 +82,7 @@ fun Fertilzer(navController: NavController, nav:androidx.compose.runtime.Mutable
             )
     ) {
         Icon(painter = painterResource(R.drawable.fertilizer_svgrepo_com), contentDescription = "home",
-            tint = Color.Green,
-            modifier = Modifier.scale(.5f)
+            modifier = Modifier.scale(.4f)
 
         )
     }
@@ -101,13 +102,15 @@ fun Chat(navController: NavController, nav:androidx.compose.runtime.MutableState
                 enabled = true,
                 onClick = {
                         navController.navigate("chat")
+                        nav.value="chat"
                 },
                 indication = null,
                 interactionSource = remember { MutableInteractionSource() }
             )
     ) {
         Icon(painter = painterResource(R.drawable.chat_svgrepo_com), contentDescription = "home",
-            modifier = Modifier.scale(.5f))
+            tint = if (nav.value=="chat") Color(0xFF008000) else Color.Black,
+            modifier = Modifier.scale(.4f))
 
     }
 }
@@ -127,15 +130,11 @@ fun Dev(navController: NavController, nav:androidx.compose.runtime.MutableState<
             )
 
     ) {
-        Icon(
-            painter = painterResource(R.drawable.developer_mode_svgrepo_com), contentDescription = "home",
-            modifier = Modifier.scale(1.2f)
-        )
+
         Box(
             modifier = Modifier
                 .height(1.dp)            // Thickness of the line
                 .background(color = androidx.compose.ui.graphics.Color.Gray)   // Color of the line
         )
-
     }
 }

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">My Application</string>
+    <string name="app_name">KrishiSakha</string>
 
     <string name="api_baseURL">http://192.168.76.253:8080/</string>
 

@@ -10,9 +10,10 @@ object SocketManager {
     fun init(){
         try {
             val options=IO.Options().apply {
+                reconnectionAttempts=10
                 auth=mapOf("token" to userDetail.jwt)
             }
-            socket=IO.socket("http://192.168.47.253:3000/",options)
+            socket=IO.socket("http://192.168.15.253:3000/",options)
             socket?.connect()
             Log.d("TAG", "init: ${socket?.connected()}")
             // Optionally, handle connect and disconnect events
@@ -20,6 +21,9 @@ object SocketManager {
             socket?.on("connect_error"){args->
                 Log.d("TAG", "init: ${args[0]}")
                 Log.d("TAG", "init: reconnecting")
+                val authMap = options.auth?.toMutableMap() ?: mutableMapOf()
+                authMap["token"] = userDetail.jwt
+                options.auth = authMap
             }
             socket?.on("disconnect") {
                 Log.d("TAG", "init: Disconnected from the server")

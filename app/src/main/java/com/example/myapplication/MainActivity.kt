@@ -1,5 +1,6 @@
 package com.example.myapplication
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,10 +10,16 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.DataBase.DataBaseObject
+import com.example.myapplication.Screens.Login.LoadingScreen
 import com.example.myapplication.Screens.Login.LoginSignupMaimScreen
 import com.example.myapplication.Screens.Login.OtpValidation
 import com.example.myapplication.Screens.Login.PreChecks
-import com.example.myapplication.Screens.Login.home.HomepageMainScreen
+import com.example.myapplication.Screens.Login.home.CameraScreen
+import com.example.myapplication.Screens.Login.home.ChatScreen
+import com.example.myapplication.Screens.Login.home.CropRecommendScreen
+import com.example.myapplication.Screens.Login.home.DrawerInit
+import com.example.myapplication.Screens.Login.home.FertilizerScreen
+import com.example.myapplication.singleton.GlobalStates
 import com.example.myapplication.singleton.SharedPreference
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -21,10 +28,11 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        DataBaseObject.init(applicationContext)
+        val context: Context=applicationContext
+        DataBaseObject.init(context)
         SharedPreference.init(this)
         setContent {
-            app()
+            App()
         }
 
     }
@@ -32,8 +40,9 @@ class MainActivity : ComponentActivity() {
 
 
 @Composable
-fun app(){
+fun App(){
     val navController= rememberNavController()
+    GlobalStates.globalStates.initNavController(navController)
     NavHost(navController=navController , startDestination = "pre"){
         composable("pre"){
             PreChecks(navController)
@@ -45,8 +54,25 @@ fun app(){
             back-> OtpValidation(navController,back.arguments?.getString("id"))
         }
         composable("home"){
-            HomepageMainScreen(navController)
+            DrawerInit(navController)
+        }
+        composable("chat"){
+            ChatScreen()
+        }
+        composable("camera"){
+            CameraScreen()
+        }
+        composable("fertilizer"){
+            FertilizerScreen()
+        }
+        composable("crop"){
+            CropRecommendScreen()
         }
     }
+
+    if (GlobalStates.globalStates.loadingScreen.value){
+        LoadingScreen()
+    }
+
     SnackbarHost(SnackBar.getSnackbarHostState())
 }

@@ -11,12 +11,17 @@ object DataBaseObject {
         INSTANCE=Room.databaseBuilder(
             context,
             DataBase::class.java,
-            "app_database"
+            "app_database2"
         ).build()
+
     }
 
     fun getDao(): UserDao? {
         return INSTANCE?.userDao()
+    }
+
+    fun destroy(){
+        INSTANCE=null;
     }
 
 }

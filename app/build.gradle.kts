@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("kotlin-kapt")
     id("com.google.dagger.hilt.android")
+    id("kotlin-parcelize")
 }
 
 android {
@@ -61,6 +62,8 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation("com.google.mlkit:translate:16.0.0")
+
     val nav_version = "2.8.2"
 
     implementation("androidx.navigation:navigation-compose:$nav_version")
@@ -86,17 +89,16 @@ dependencies {
     implementation ("io.socket:socket.io-client:2.0.1") // Latest stable version
     implementation ("org.json:json:20210307") // For JSON support
 
-    // Room runtime
-    implementation("androidx.room:room-runtime:2.5.0")
+    // Room runtime - Alpha version
+    implementation("androidx.room:room-runtime:2.5.0-alpha02")
+    // Room compiler - Alpha version for annotation processing
+    kapt("androidx.room:room-compiler:2.5.0-alpha02")
+    // Room Kotlin Extensions (for coroutine support) - Alpha version
+    implementation("androidx.room:room-ktx:2.5.0-alpha02")
+    implementation("com.google.android.gms:play-services-location:18.0.0")
 
-// Room compiler for annotation processing (using KAPT)
-    kapt("androidx.room:room-compiler:2.5.0")
-
-// Room Kotlin Extensions for coroutines support
-    implementation("androidx.room:room-ktx:2.5.0")
 
 // Optional: If you're using Kotlin standard library (this is already added via the Kotlin plugin in most cases, but you can explicitly add it)
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.8.0")
 
 
 }
