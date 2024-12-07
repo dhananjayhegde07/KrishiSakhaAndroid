@@ -216,6 +216,7 @@ fun ChatScreenContent(
 fun ChatAlert(onClose: () -> Unit,
               onCancel: () -> Unit ){
     AlertDialog(
+        containerColor =  Color(0xFFE8F5E9),
         onDismissRequest = onCancel,
         title = {
             Text(

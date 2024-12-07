@@ -4,6 +4,11 @@ import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
@@ -45,7 +50,23 @@ class MainActivity : ComponentActivity() {
 fun App(){
     val navController= rememberNavController()
     GlobalStates.globalStates.initNavController(navController)
-    NavHost(navController=navController , startDestination = "pre"){
+    NavHost(
+        navController=navController ,
+        startDestination = "pre",
+        enterTransition = {
+            slideInVertically(
+            animationSpec = tween(700),
+            initialOffsetY = { it } // Start from bottom
+        ) },
+        exitTransition = {
+            slideOutVertically(
+                animationSpec = tween(700),
+                targetOffsetY = { it } // End at the bottom
+            )
+        },
+        popEnterTransition = { slideInHorizontally(tween(700)) { it } },
+        popExitTransition = { slideOutHorizontally(tween(700)) { -it } }
+    ){
         composable("pre"){
             PreChecks(navController)
         }

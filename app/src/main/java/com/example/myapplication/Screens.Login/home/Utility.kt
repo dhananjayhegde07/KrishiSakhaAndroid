@@ -5,7 +5,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,6 +41,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -130,103 +130,120 @@ fun ResultsPage(showResults: MutableState<Boolean>,result: MutableState<DetectRe
 @Composable
 fun ShowRes(result: DiseasesModel?) {
     val translate = remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(10.dp)
             .verticalScroll(state = rememberScrollState(), enabled = true)
+            .background(Color(0xFFE8F5E9))
+            .padding(10.dp)// Light green background for the entire screen
     ) {
+        // Title Section
         Row(
-            modifier = Modifier.height(60.dp).fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Color(0x884C8325)),
+            modifier = Modifier
+                .height(60.dp)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color(0xFF81C784)) // Light Green background for this row
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("Found It...!!")
-            Icon(painter = painterResource(R.drawable.translate_svgrepo_com), contentDescription = ""
-                , modifier = Modifier.height(30.dp).clickable{
-                    translate.value= ! translate.value
-                }
+            Text(
+                text = "Found It...!!",
+                fontSize = 20.sp,
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
+            Icon(
+                painter = painterResource(R.drawable.translate_svgrepo_com),
+                contentDescription = null,
+                modifier = Modifier
+                    .height(30.dp)
+                    .clickable {
+                        translate.value = !translate.value
+                    },
+                tint = Color.White
             )
         }
+
         Spacer(Modifier.height(20.dp))
-        Text("Name", fontSize = 18.sp, color = Color(0xBA313131))
-        Spacer(
-            Modifier
-                .fillMaxWidth(.7f)
-                .height(1.dp)
-                .border(color = Color.Black, width = 1.dp))
-        Row(
-            modifier = Modifier
-                .heightIn(min = 50.dp)
-                .padding(start = 20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ){
-            Text(
-                if(translate.value)
-                    result?.kannadaName?:""
-                else
-                    result?.className?:""
-            )
-        }
-        Spacer(Modifier.height(10.dp))
-        Text("Description", fontSize = 18.sp, color = Color(0xBA313131))
-        Spacer(
-            Modifier
-                .fillMaxWidth(.7f)
-                .height(1.dp)
-                .border(color = Color.Black, width = 1.dp))
-        Row(
-            modifier = Modifier
-                .heightIn(min = 50.dp)
-                .padding(start = 20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ){
-            Text(
-                if(translate.value)
-                    result?.kannadaDescription?:""
-                else
-                    result?.description?:""
-            )
-        }
-        Text("Cause", fontSize = 18.sp, color = Color(0xBA313131))
-        Spacer(
-            Modifier
-                .fillMaxWidth(.7f)
-                .height(1.dp)
-                .border(color = Color.Black, width = 1.dp))
-        Row(
-            modifier = Modifier
-                .heightIn(min = 50.dp)
-                .padding(start = 20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ){
-            Text(
-                if(translate.value)
-                    result?.kannadaCause?:""
-                else
-                    result?.cause?:""
-            )
-        }
-        Text("Recommended Actions", fontSize = 18.sp, color = Color(0xBA313131))
-        Spacer(
-            Modifier
-                .fillMaxWidth(.7f)
-                .height(1.dp)
-                .border(color = Color.Black, width = 1.dp))
+
+        // Name Section
+        SectionHeader(title = "Name")
+        CustomRow(
+            text = if (translate.value) result?.kannadaName ?: "" else result?.className ?: ""
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        // Description Section
+        SectionHeader(title = "Description")
+        CustomRow(
+            text = if (translate.value) result?.kannadaDescription ?: "" else result?.description ?: ""
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        // Cause Section
+        SectionHeader(title = "Cause")
+        CustomRow(
+            text = if (translate.value) result?.kannadaCause ?: "" else result?.cause ?: ""
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        // Recommended Actions Section
+        SectionHeader(title = "Recommended Actions")
         Column(
-            modifier = Modifier.padding( start = 20.dp, top = 20.dp),
-        ){
+            modifier = Modifier.padding(start = 20.dp)
+        ) {
             result?.recommendedActions?.forEach {
+                Spacer(Modifier.height(10.dp))
                 Text(
-                    if(translate.value)
-                        it.kannadaAction
-                    else
-                        it.action
+                    text = if (translate.value) it.kannadaAction else it.action,
+                    fontSize = 16.sp,
+                    color = Color(0xFF388E3C) // Green color for actions
                 )
+
             }
         }
     }
 }
+
+@Composable
+fun SectionHeader(title: String) {
+    Text(
+        text = title,
+        fontSize = 18.sp,
+        color = Color(0xFF388E3C), // Dark green for section headers
+        fontWeight = FontWeight.Bold
+    )
+    Spacer(
+        Modifier
+            .fillMaxWidth(.7f)
+            .height(1.dp)
+            .background(Color(0xFF388E3C)) // Green underline for sections
+    )
+}
+
+@Composable
+fun CustomRow(text: String) {
+    Row(
+        modifier = Modifier
+            .heightIn(min = 50.dp)
+            .padding(start = 20.dp, top = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = text,
+            fontSize = 16.sp,
+            color = Color(0xFF388E3C), // Green color for text
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
 
 @Composable
 fun Unable(causes: List<String>){

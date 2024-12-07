@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,8 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.myapplication.retrofit.Retrofit
 import com.example.myapplication.singleton.GlobalStates
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -35,57 +36,81 @@ import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun Wheather(){
+fun Wheather() {
     val data = GlobalStates.globalStates.weatherData.value
     LaunchedEffect(Unit) {
-        if (data!=null) return@LaunchedEffect
+        if (data != null) return@LaunchedEffect
         try {
-            GlobalStates.globalStates.weatherData.value= withContext(Dispatchers.IO){
+            GlobalStates.globalStates.weatherData.value = withContext(Dispatchers.IO) {
                 Retrofit.api.getWeatherSoilData()
             }
             Log.d("TAG", "Wheather: ${GlobalStates.globalStates.weatherData.value}")
-        }catch (e: Exception){
+        } catch (e: Exception) {
             Log.d("TAG", "Wheather: ${e.message}")
         }
     }
-    when(data){
-        null->{
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
-                Text("Loading...")
-            }
-        }
-        else -> {
-            Column(
-                Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth()
-            ) {
+
+    Box(
+        Modifier
+            .fillMaxSize()
+            ,
+        contentAlignment = Alignment.Center
+    ) {
+        when (data) {
+            null -> {
                 Text(
-                    textAlign = TextAlign.Center,
-                    text = formatDate(),
-                    modifier = Modifier
-                        .weight(.25f)
-                        .fillMaxWidth()
-                        .padding(10.dp)
+                    text = "Loading...",
+                    color = Color(0xFF2E7D32), // Dark green
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
                 )
-                Row (
+            }
+            else -> {
+                Column(
                     Modifier
-                        .weight(.75f)
-                        .fillMaxWidth()
-                ){
-                    Column (Modifier.weight(.7f)){
-                        Text("Temp: ${data.weather?.current?.temperature_2m}${data.weather?.current_units?.temperature_2m}")
-                        Text("Wind: ${data.weather?.current?.wind_speed_10m}${data.weather?.current_units?.wind_speed_10m}")
-                        Text("Wind Direction: ${data.weather?.current?.wind_direction_10m}${data.weather?.current_units?.wind_direction_10m}")
-                        Text("Temp: ${data.weather?.current?.relative_humidity_2m}${data.weather?.current_units?.relative_humidity_2m}")
-                        Text("Temp: ${data.weather?.current?.rain}${data.weather?.current_units?.rain}")
-                    }
-                    Column(
-                        modifier = Modifier.weight(.3f),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ){
-                        Text(getWeatherDescription(data.weather?.current?.weather_code))
+                        .fillMaxSize()
+                        .padding(10.dp),
+                    verticalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(
+                            verticalArrangement=Arrangement.spacedBy(8.dp) // Vertical spacing between items
+                        ) {
+                            WeatherDetailText(
+                                label = "Temperature",
+                                value = "${data.weather?.current?.temperature_2m}${data.weather?.current_units?.temperature_2m}"
+                            )
+                            WeatherDetailText(
+                                label = "Wind Speed",
+                                value = "${data.weather?.current?.wind_speed_10m}${data.weather?.current_units?.wind_speed_10m}"
+                            )
+                            WeatherDetailText(
+                                label = "Wind Direction",
+                                value = "${data.weather?.current?.wind_direction_10m}${data.weather?.current_units?.wind_direction_10m}"
+                            )
+                            WeatherDetailText(
+                                label = "Humidity",
+                                value = "${data.weather?.current?.relative_humidity_2m}${data.weather?.current_units?.relative_humidity_2m}"
+                            )
+                            WeatherDetailText(
+                                label = "Rain",
+                                value = "${data.weather?.current?.rain}${data.weather?.current_units?.rain}"
+                            )
+                        }
+
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = getWeatherDescription(data.weather?.current?.weather_code),
+                                color = Color(0xFF388E3C), // Slightly darker green
+                                fontSize = 16.sp
+                            )
+                        }
                     }
                 }
             }
@@ -93,6 +118,25 @@ fun Wheather(){
     }
 }
 
+
+@Composable
+fun WeatherDetailText(label: String, value: String) {
+    Column(
+        horizontalAlignment = Alignment.Start
+    ) {
+        Text(
+            text = "$label:",
+            color = Color(0xFF388E3C), // Medium green
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = value,
+            color = Color(0xFF388E3C), // Medium green
+            fontSize = 14.sp
+        )
+    }
+}
 
 
 @OptIn(ExperimentalPermissionsApi::class)
