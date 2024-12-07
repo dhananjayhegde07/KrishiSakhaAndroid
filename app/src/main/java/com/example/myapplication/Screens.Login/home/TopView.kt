@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.DataBase.DataBaseObject
 import com.example.myapplication.R
+import com.example.myapplication.singleton.GlobalStates
 import com.example.myapplication.singleton.SharedPreference
 import com.example.myapplication.singleton.userDetail
 import kotlinx.coroutines.Dispatchers
@@ -103,7 +104,7 @@ fun CustomDrawerContent(onMenuItemClicked: (String) -> Unit,onLogOut:()->Unit) {
            }
            Button(
                onClick = {
-
+                    GlobalStates.globalStates.navController?.navigate("reset")
                }
            ) {
                Text("Change P/W")

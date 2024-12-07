@@ -55,12 +55,16 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.myapplication.DTO.DetectReq
 import com.example.myapplication.DTO.DetectRes
+import com.example.myapplication.DataBase.DataBaseObject
 import com.example.myapplication.R
 import com.example.myapplication.retrofit.Retrofit
 import com.example.myapplication.singleton.GlobalStates
+import com.example.myapplication.singleton.userDetail
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -75,6 +79,12 @@ fun CameraScreen(){
     val camPermission = rememberPermissionState(Manifest.permission.CAMERA)
     val sheetState= rememberModalBottomSheetState()
     val scope= rememberCoroutineScope()
+    LaunchedEffect(Unit) {
+        val x = withContext(Dispatchers.IO){
+            DataBaseObject.INSTANCE?.diseaseDao()?.get(userDetail.username)
+        }
+        Log.d("TAG", "CameraScreen: ${x.toString()}")
+    }
     when(camPermission.status) {
         PermissionStatus.Granted -> {
             CameraView()
@@ -171,21 +181,23 @@ fun CameraView(){
                 .border(color = Color.White, width = 2.dp, shape = RoundedCornerShape(10.dp))
                 .clip(RoundedCornerShape(10.dp))
                 .background(Color.Transparent)
-                .clickable(enabled = isEnabled.value,onClick = {
-                    isEnabled.value=false;
-                    val outputOptions = ImageCapture.OutputFileOptions.Builder(outputFile).build()
+                .clickable(enabled = isEnabled.value, onClick = {
+                    isEnabled.value = false;
+                    val outputOptions = ImageCapture.OutputFileOptions
+                        .Builder(outputFile)
+                        .build()
                     cameraController.takePicture(
                         outputOptions,
                         ContextCompat.getMainExecutor(localcontext),
                         object : ImageCapture.OnImageSavedCallback {
-                            override  fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                                triggerReq.value=true
-                                isEnabled.value=true;
+                            override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                                triggerReq.value = true
+                                isEnabled.value = true;
                             }
 
                             override fun onError(exception: ImageCaptureException) {
                                 Log.d("TAG", "onCaptureSuccess: ${exception.toString()}")
-                                isEnabled.value=true
+                                isEnabled.value = true
                             }
                         }
                     )
@@ -217,14 +229,16 @@ fun CameraView(){
         ) {
             Box(
                 Modifier
-                    .fillMaxHeight(.7f).clip(RoundedCornerShape(30.dp)).background(Color.White)
+                    .fillMaxHeight(.7f)
+                    .clip(RoundedCornerShape(30.dp))
+                    .background(Color.White)
                     .clickable(onClick = {
-                    if(cameraController.cameraSelector== CameraSelector.DEFAULT_BACK_CAMERA){
-                        cameraController.cameraSelector= CameraSelector.DEFAULT_FRONT_CAMERA
-                        return@clickable
-                    }
-                    cameraController.cameraSelector= CameraSelector.DEFAULT_BACK_CAMERA
-                })
+                        if (cameraController.cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
+                            cameraController.cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
+                            return@clickable
+                        }
+                        cameraController.cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+                    })
             ){
                 Icon(painter = painterResource(R.drawable.camera_rotate_svgrepo_com), contentDescription = "file",
                     modifier = Modifier.scale(.5f)
@@ -234,12 +248,20 @@ fun CameraView(){
             Image_select(selectedType,result,showResults)
         }
     }
-    Box(Modifier.fillMaxSize().padding(start = 10.dp, top = 10.dp)){
+    Box(
+        Modifier
+            .fillMaxSize()
+            .padding(start = 10.dp, top = 10.dp)){
         Box(
-            Modifier.height(40.dp).width(40.dp).clip(RoundedCornerShape(50)).background(Color.White)
-                .align(Alignment.TopStart).clickable{
-                    GlobalStates.globalStates.navController?.navigate("home"){
-                        popUpTo("camera",{inclusive=true})
+            Modifier
+                .height(40.dp)
+                .width(40.dp)
+                .clip(RoundedCornerShape(50))
+                .background(Color.White)
+                .align(Alignment.TopStart)
+                .clickable {
+                    GlobalStates.globalStates.navController?.navigate("home") {
+                        popUpTo("camera", { inclusive = true })
                     }
                 }
         ){
@@ -269,15 +291,15 @@ fun Image_select(selectedType: MutableState<String?>, result: MutableState<Detec
             val file = uriToFile(cx.value!!,context)
             result.value= GetDetect(file,selectedType.value)
             GlobalStates.globalStates.notLoading()
-
             showResults.value=true
             cx.value=null
-
         }
     }
     Box(
         Modifier
-            .fillMaxHeight(.7f).clip(RoundedCornerShape(30.dp)).background(Color.White)
+            .fillMaxHeight(.7f)
+            .clip(RoundedCornerShape(30.dp))
+            .background(Color.White)
             .clickable(onClick = {
                 launcher.launch("image/*")
             })
@@ -360,4 +382,8 @@ fun uriToFile(uri: Uri, context: Context): File {
     }
 
     return file
+}
+
+suspend fun saveDisease(){
+
 }

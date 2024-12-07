@@ -63,6 +63,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation("com.google.mlkit:translate:16.0.0")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.10")
 
     val nav_version = "2.8.2"
 

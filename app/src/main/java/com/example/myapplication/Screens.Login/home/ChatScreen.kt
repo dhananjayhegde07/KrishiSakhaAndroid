@@ -19,12 +19,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -32,6 +36,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,9 +47,14 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.zIndex
+import com.example.myapplication.DTO.CLoseChatSocket
+import com.example.myapplication.DTO.CloseChatReq
 import com.example.myapplication.DTO.MessageDTO
 import com.example.myapplication.DTO.Messege
 import com.example.myapplication.R
+import com.example.myapplication.SnackBar
 import com.example.myapplication.retrofit.Retrofit
 import com.example.myapplication.singleton.GlobalStates
 import com.example.myapplication.singleton.SocketManager
@@ -53,6 +63,7 @@ import com.example.myapplication.singleton.userDetail
 import com.example.myapplication.utils.Officials
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @SuppressLint("MutableCollectionMutableState")
@@ -71,6 +82,7 @@ fun ChatScreen(){
             Log.d("TAG", "ChatScreen: ${res.chatID}")
             official.value=res.official
             chatId.value=res.chatID.toString()
+            GlobalStates.globalStates.chatList.addAll(res.chatList)
             SocketManager.socket?.on("connect"){
                 connected.value=true
             }
@@ -101,8 +113,8 @@ fun ChatScreenContent(
     var chatList= GlobalStates.globalStates.chatList
     DisposableEffect(Unit) {
         SocketManager.socket?.on("msg") { args->
-            val now= Gson().fromJson<Messege>(args[0].toString(), Messege::class.java)
-            chatList.add(now)
+            val now= Gson().fromJson<MessageDTO>(args[0].toString(), MessageDTO::class.java)
+            chatList.add(now.message)
         }
         disp.value = true
         onDispose {
@@ -111,6 +123,37 @@ fun ChatScreenContent(
     }
     if (!disp.value) return
     val msg = remember { mutableStateOf("") }
+    val info = remember { mutableStateOf(false) }
+    val close = remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    if(info.value){
+        ChatInfoPop(info,official,chatId)
+        Box(Modifier.fillMaxSize().background(Color(0x70282828)).zIndex(1f))
+    }
+    if (close.value){
+        ChatAlert(
+            onClose = {
+                scope.launch(Dispatchers.IO){
+                    try {
+                        Retrofit.api.closeChat(CloseChatReq(chatId.value))
+
+                    }catch (e: Exception){
+                        SnackBar.showSnack("Unable to close", SnackbarDuration.Short)
+                        return@launch
+                    }
+                    SocketManager.socket?.emit("close", Gson().toJson(CLoseChatSocket(chatId.value,official.value?.pin.toString())))
+                    close.value=false
+                    SnackBar.showSnack("Closed", SnackbarDuration.Short)
+                    withContext(Dispatchers.Main){
+                        GlobalStates.globalStates.navController?.navigate("home"){
+                            popUpTo("chat",{inclusive=true})
+                        }
+                    }
+                }
+            },
+            onCancel = {close.value=false},
+        )
+    }
     Column(
         Modifier
             .fillMaxSize()
@@ -121,7 +164,7 @@ fun ChatScreenContent(
                 .weight(.09f)
                 .fillMaxSize()
                 .background(Color(0x6184B661))){
-            TopChatBar(official)
+            TopChatBar(official,info)
         }
         Box(
             Modifier
@@ -141,7 +184,7 @@ fun ChatScreenContent(
                 horizontalArrangement = Arrangement.SpaceAround,
                 modifier = Modifier.fillMaxSize()
             ) {
-                MenuBox()
+                MenuBox(close)
                 InputField(msg)
                 Box(
                     Modifier
@@ -170,10 +213,98 @@ fun ChatScreenContent(
 }
 
 @Composable
+fun ChatAlert(onClose: () -> Unit,
+              onCancel: () -> Unit ){
+    AlertDialog(
+        onDismissRequest = onCancel,
+        title = {
+            Text(
+                text = "Close Chat Session?",
+            )
+        },
+        text = {
+            Text(
+                text = "Are you sure you want to close this chat session?",
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onClose) {
+                Text(
+                    text = "Close",
+
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onCancel) {
+                Text(
+                    text = "Cancel",
+                )
+            }
+        }
+    )
+}
+
+
+@Composable
+fun ChatInfoPop(
+    info: MutableState<Boolean>,
+    official: MutableState<Officials?>,
+    chatId: MutableState<String>
+) {
+    Popup(
+        alignment = Alignment.TopEnd,
+        onDismissRequest = { info.value = false },
+        offset = _root_ide_package_.androidx.compose.ui.unit.IntOffset(x=-100,y=150)
+    ) {
+        Box(
+            modifier = Modifier.fillMaxWidth(.7f).fillMaxHeight(.5f).clip(RoundedCornerShape(10.dp))
+                .background(Color.White).padding(10.dp)
+        ){
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row (
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ){
+                    Text("Chatting with", fontSize = 18.sp)
+                }
+                Spacer(Modifier.height(20.dp))
+                Text("Name : ${official.value?.name?:""}")
+                Spacer(Modifier.height(10.dp))
+                Text("Email : ${official.value?.email?:""}")
+                Spacer(Modifier.height(10.dp))
+                Text("Phone : ${official.value?.phone?:""}")
+                Spacer(Modifier.height(10.dp))
+                Row (
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ){
+                    Text("Session Info", fontSize = 18.sp)
+                }
+                Spacer(Modifier.height(20.dp))
+                Text("Chat ID : ${chatId.value}")
+                Spacer(Modifier.height(10.dp))
+            }
+        }
+    }
+}
+
+@Composable
 fun MesseggeList() {
     val screenwidth= LocalConfiguration.current.screenWidthDp
     val chatlist= GlobalStates.globalStates.chatList
+    val listState = rememberLazyListState()
+
+    // Automatically scroll to the bottom whenever the message list changes
+    LaunchedEffect(chatlist.size) {
+        if (chatlist.isNotEmpty()) {
+            listState.animateScrollToItem(chatlist.size - 1)
+        }
+    }
     LazyColumn (
+        state = listState,
         modifier = Modifier
             .fillMaxSize()
             .padding(7.dp)
@@ -209,13 +340,14 @@ fun MesseggeList() {
                         .heightIn(min = 50.dp)
                         .widthIn(min = 50.dp, max = (0.7 * screenwidth).dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0xFFCBCBCB))
+                        .background(if (chatlist[it].from==userDetail.username) Color(0xD03B9F61) else Color(0xFFCBCBCB))
                         .padding(10.dp),
                     contentAlignment = Alignment.Center
                 ){
                     Text(
                         text = if(transText.value=="")chatlist[it].msg else transText.value,
                         fontSize = 20.sp,
+                        color = if (chatlist[it].from==userDetail.username) Color.White else Color.Black
                         )
                 }
             }
@@ -246,7 +378,7 @@ fun sendMSg(messege: MessageDTO){
 
 
 @Composable
-fun TopChatBar(official: MutableState<Officials?>) {
+fun TopChatBar(official: MutableState<Officials?>, info: MutableState<Boolean>) {
     Row (
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -274,7 +406,9 @@ fun TopChatBar(official: MutableState<Officials?>) {
         }
         Text(text = official.value?.name.toString(), fontSize = 20.sp)
         Icon(painter = painterResource(R.drawable.info_circle_svgrepo_com), contentDescription = ""
-            , modifier = Modifier.height(30.dp)
+            , modifier = Modifier.height(30.dp).clickable{
+                info.value=true
+            }
         )
     }
 }
@@ -282,7 +416,8 @@ fun TopChatBar(official: MutableState<Officials?>) {
 
 
 @Composable
-fun MenuBox(){
+fun MenuBox(close: MutableState<Boolean>) {
+
     Box(
         Modifier
             .height(40.dp)
@@ -290,7 +425,7 @@ fun MenuBox(){
             .clip(RoundedCornerShape(50))
             .background(Color.White)
             .clickable {
-
+                close.value=true
             }
     ){
         Icon(painter = painterResource(R.drawable.menu_dots_circle_svgrepo_com), contentDescription = "",

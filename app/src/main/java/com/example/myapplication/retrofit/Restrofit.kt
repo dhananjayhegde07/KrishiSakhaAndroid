@@ -5,7 +5,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object Retrofit{
-    val baseURL= "http://192.168.15.253:8080/"
+    val baseURL= "http://192.168.186.253:8080/"
     val client= OkHttpClient.Builder()
         .addInterceptor(JWTs()).build()
     val api: ApiService by lazy {

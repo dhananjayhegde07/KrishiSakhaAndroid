@@ -1,6 +1,8 @@
 package com.example.myapplication.Screens.Login.home
 
+import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,8 +15,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -36,24 +40,38 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.zIndex
 import com.example.myapplication.DTO.FertilizerRecommendModel
 import com.example.myapplication.DTO.PredictionFerReq
 import com.example.myapplication.DTO.PredictionFerRes
+import com.example.myapplication.DataBase.DataBaseObject
+import com.example.myapplication.DataBase.FertilizerSave
 import com.example.myapplication.R
 import com.example.myapplication.SnackBar
 import com.example.myapplication.retrofit.Retrofit
 import com.example.myapplication.singleton.GlobalStates
+import com.example.myapplication.singleton.userDetail
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun FertilizerScreen(){
     val auto = remember { mutableStateOf(true) }
     val show = remember { mutableStateOf(false) }
     val result = remember { mutableStateOf<FertilizerRecommendModel?>(null) }
+    val info = remember { mutableStateOf(false) }
     if (show.value){
         ResultsPageFer(show,result)
+    }
+    if (info.value){
+        PopUpScreenFertilizer(info)
+        Box(Modifier.fillMaxSize().background(Color(0x70282828)).zIndex(1f))
     }
     Box(
         Modifier
@@ -70,22 +88,67 @@ fun FertilizerScreen(){
         ) {
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxWidth().height(40.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp)
             ) {
                 Text("Fertilizer", fontSize = 20.sp,)
             }
             AutoFertilizer(show,result)
         }
-        TopBarFer()
+        TopBarFer(info)
     }
 
 }
 
+@Composable
+fun PopUpScreenFertilizer(info: MutableState<Boolean>) {
+    Log.d("TAG", "PopUpScreenFertilizer: ")
+    Popup(
+        alignment = Alignment.TopEnd,
+        onDismissRequest = { info.value = false },
+        offset = _root_ide_package_.androidx.compose.ui.unit.IntOffset(x=-100,y=150)
+    ) {
+        Box(
+            modifier = Modifier.fillMaxWidth(.7f).fillMaxHeight(.5f).clip(RoundedCornerShape(10.dp))
+                .background(Color.White).padding(10.dp)
+        ){
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "NPK Values in Fertilizers:",
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                Text(
+                    text = "• Nitrogen (N): Promotes leaf and stem growth. Essential for chlorophyll production.",
+
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                Text(
+                    text = "• Phosphorus (P): Encourages root development and reproductive growth.",
+
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                Text(
+                    text = "• Potassium (K): Improves overall plant health, resistance, and quality.",
+
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+        }
+    }
+}
+
 
 @Composable
-fun TopBarFer(){
+fun TopBarFer(info: MutableState<Boolean>) {
     Row (
-        modifier = Modifier.fillMaxWidth().height(50.dp).padding(end = 10.dp, start = 7.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .padding(end = 10.dp, start = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ){
@@ -119,7 +182,11 @@ fun TopBarFer(){
 
             ){
             Icon(painter = painterResource(R.drawable.info_circle_svgrepo_com), contentDescription = "",
-                modifier = Modifier.scale(.6f)
+                modifier = Modifier
+                    .scale(.6f)
+                    .clickable {
+                        info.value = true
+                    }
             )
         }
     }
@@ -135,7 +202,9 @@ fun AutoFertilizer(show: MutableState<Boolean>, result: MutableState<FertilizerR
     Spacer(Modifier.height(10.dp))
 
     Column(
-        modifier = Modifier.fillMaxWidth().padding(10.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(10.dp)
     ) {
         OutlinedTextField(
             value = n.value,
@@ -232,14 +301,30 @@ fun AutoFertilizer(show: MutableState<Boolean>, result: MutableState<FertilizerR
                         SnackBar.s.showSnackbar("All fields are mandatory")
                         return@launch
                     }
+                    val req=PredictionFerReq(
+                        n.value.toDouble(),
+                        p.value.toDouble(),
+                        k.value.toDouble()
+                    )
                     val res=  withContext(Dispatchers.IO){
-                        getFertilizer(PredictionFerReq(
-                            n.value.toDouble(),
-                            p.value.toDouble(),
-                            k.value.toDouble()
-                        ))
+                        getFertilizer(req)
                     }
                     result.value=res.recommend
+                    if (result.value!=null){
+                        withContext(Dispatchers.IO){
+                            DataBaseObject.INSTANCE?.fertilizerDao()?.save(
+                                FertilizerSave().apply {
+                                    username = userDetail.username
+                                    timestamp = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                                        Locale.getDefault()).apply {
+                                        timeZone = TimeZone.getTimeZone("UTC")
+                                    }.format(Date())
+                                    input = req
+                                    this.result = result.value
+                                }
+                            )
+                        }
+                    }
                     show.value=true
                 }
             }
@@ -254,6 +339,7 @@ fun AutoFertilizer(show: MutableState<Boolean>, result: MutableState<FertilizerR
 @Composable
 fun ResultsPageFer(show: MutableState<Boolean>, result: MutableState<FertilizerRecommendModel?>) {
     val state= rememberModalBottomSheetState()
+    val translate = remember { mutableStateOf(false) }
     ModalBottomSheet(
         sheetState = state,
         onDismissRequest = {
@@ -266,7 +352,193 @@ fun ResultsPageFer(show: MutableState<Boolean>, result: MutableState<FertilizerR
                 Text("unable to Predict")
             }
             else -> {
-                Text(result.value?.scientificName.toString())
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(10.dp)
+                        .verticalScroll(state = rememberScrollState(), enabled = true)
+                ) {
+                    Row(
+                        modifier = Modifier.height(60.dp).fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Color(0x884C8325)),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Found It...!!")
+                        Icon(painter = painterResource(R.drawable.translate_svgrepo_com), contentDescription = ""
+                            , modifier = Modifier.height(30.dp).clickable{
+                                translate.value= ! translate.value
+                            }
+                        )
+                    }
+                    Text("Name", fontSize = 18.sp, color = Color(0xBA313131))
+                    Spacer(
+                        Modifier
+                            .fillMaxWidth(.7f)
+                            .height(1.dp)
+                            .border(color = Color.Black, width = 1.dp))
+                    Row(
+                        modifier = Modifier
+                            .height(70.dp)
+                            .padding(start = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ){
+                        Text(result.value?.name?:"")
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    Text("Scientific Name", fontSize = 18.sp, color = Color(0xBA313131))
+                    Spacer(
+                        Modifier
+                            .fillMaxWidth(.7f)
+                            .height(1.dp)
+                            .border(color = Color.Black, width = 1.dp))
+                    Row(
+                        modifier = Modifier
+                            .height(70.dp)
+                            .padding(start = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ){
+                        Text(result.value?.scientificName?:"")
+                    }
+                    Text("NPK Composition", fontSize = 18.sp, color = Color(0xBA313131))
+                    Spacer(
+                        Modifier
+                            .fillMaxWidth(.7f)
+                            .height(1.dp)
+                            .border(color = Color.Black, width = 1.dp))
+                    Row(
+                        modifier = Modifier
+                            .height(70.dp)
+                            .padding(start = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ){
+                        Text(result.value?.NPK_Composition?:"")
+                    }
+                    Text("Application Rate", fontSize = 18.sp, color = Color(0xBA313131))
+                    Spacer(
+                        Modifier
+                            .fillMaxWidth(.7f)
+                            .height(1.dp)
+                            .border(color = Color.Black, width = 1.dp))
+                    Row(
+                        modifier = Modifier
+                            .height(70.dp)
+                            .padding(start = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ){
+                        Text(result.value?.applicationRate?:"")
+                    }
+                    Text("Best Time To Apply", fontSize = 18.sp, color = Color(0xBA313131))
+                    Spacer(
+                        Modifier
+                            .fillMaxWidth(.7f)
+                            .height(1.dp)
+                            .border(color = Color.Black, width = 1.dp))
+                    Row(
+                        modifier = Modifier
+                            .height(70.dp)
+                            .padding(start = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ){
+                        Text(result.value?.bestTimeToApply?:"")
+                    }
+                    Text("Storage and Handling", fontSize = 18.sp, color = Color(0xBA313131))
+                    Spacer(
+                        Modifier
+                            .fillMaxWidth(.7f)
+                            .height(1.dp)
+                            .border(color = Color.Black, width = 1.dp))
+                    Row(
+                        modifier = Modifier
+                            .height(70.dp)
+                            .padding(start = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ){
+                        Text(result.value?.storageAndHandling?:"")
+                    }
+                    Text("Cost Estimate", fontSize = 18.sp, color = Color(0xBA313131))
+                    Spacer(
+                        Modifier
+                            .fillMaxWidth(.7f)
+                            .height(1.dp)
+                            .border(color = Color.Black, width = 1.dp))
+                    Row(
+                        modifier = Modifier
+                            .height(70.dp)
+                            .padding(start = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ){
+                        Text(result.value?.costEstimate?:"")
+                    }
+                    Text("Organic V/S Synthetic", fontSize = 18.sp, color = Color(0xBA313131))
+                    Spacer(
+                        Modifier
+                            .fillMaxWidth(.7f)
+                            .height(1.dp)
+                            .border(color = Color.Black, width = 1.dp))
+                    Row(
+                        modifier = Modifier
+                            .height(70.dp)
+                            .padding(start = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ){
+                        Text(result.value?.organicVsSynthetic?:"")
+                    }
+                    Text("Tips", fontSize = 18.sp, color = Color(0xBA313131))
+                    Spacer(
+                        Modifier
+                            .fillMaxWidth(.7f)
+                            .height(1.dp)
+                            .border(color = Color.Black, width = 1.dp))
+                    Column(
+                        modifier = Modifier.padding( start = 20.dp, top = 20.dp),
+                    ){
+                        GetPoints(
+                            if(translate.value)
+                                result.value?.tips?.kannada
+                            else
+                                result.value?.tips?.english
+                        )
+                    }
+                    Text("Recommended Crops", fontSize = 18.sp, color = Color(0xBA313131))
+                    Spacer(
+                        Modifier
+                            .fillMaxWidth(.7f)
+                            .height(1.dp)
+                            .border(color = Color.Black, width = 1.dp))
+                    Column(
+                        modifier = Modifier.padding( start = 20.dp, top = 20.dp),
+                    ){
+                        GetPoints(
+                            result.value?.recommendedCrops
+                        )
+                    }
+                    Text("Potential Risks", fontSize = 18.sp, color = Color(0xBA313131))
+                    Spacer(
+                        Modifier
+                            .fillMaxWidth(.7f)
+                            .height(1.dp)
+                            .border(color = Color.Black, width = 1.dp))
+                    Column(
+                        modifier = Modifier.padding( start = 20.dp, top = 20.dp),
+                    ){
+                        GetPoints(
+                            result.value?.potentialRisks
+                        )
+                    }
+                    Text("Benefits", fontSize = 18.sp, color = Color(0xBA313131))
+                    Spacer(
+                        Modifier
+                            .fillMaxWidth(.7f)
+                            .height(1.dp)
+                            .border(color = Color.Black, width = 1.dp))
+                    Column(
+                        modifier = Modifier.padding( start = 20.dp, top = 20.dp),
+                    ){
+                        GetPoints(
+                            result.value?.benefits
+                        )
+                    }
+                }
             }
         }
     }

@@ -10,10 +10,9 @@ object SocketManager {
     fun init(){
         try {
             val options=IO.Options().apply {
-                reconnectionAttempts=10
                 auth=mapOf("token" to userDetail.jwt)
             }
-            socket=IO.socket("http://192.168.15.253:3000/",options)
+            socket=IO.socket("http://192.168.186.253:3000/",options)
             socket?.connect()
             Log.d("TAG", "init: ${socket?.connected()}")
             // Optionally, handle connect and disconnect events
@@ -31,6 +30,12 @@ object SocketManager {
         }
         catch (e: Exception){
             Log.e("TAG", "init: ${e.toString()}", )
+        }
+    }
+
+    fun recieveMessage(){
+        socket?.on("msg"){args->
+            Log.d("TAG", "recieveMessage: ${args[0]}")
         }
     }
 

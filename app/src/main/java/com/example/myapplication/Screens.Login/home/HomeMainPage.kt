@@ -38,6 +38,7 @@ import androidx.navigation.NavController
 import com.example.myapplication.R
 import com.example.myapplication.Screens.Login.components.GetSoilDetails
 import com.example.myapplication.Screens.Login.components.Wheather
+import com.example.myapplication.singleton.GlobalStates
 import com.example.myapplication.singleton.userDetail
 import kotlinx.coroutines.launch
 
@@ -99,7 +100,7 @@ fun Content(navController: NavController){
 
         Row(
             modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
-                .height(200.dp).background(Color(0xAE968080)),
+                .height(200.dp).background(Color(0xAEB7B1B1)),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ){
@@ -108,7 +109,7 @@ fun Content(navController: NavController){
         Spacer(Modifier.height(10.dp))
         Row(
             modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
-                .height(200.dp).background(Color(0xAE968080)),
+                .height(200.dp).background(Color(0xAEB7B1B1)),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ){
@@ -119,18 +120,21 @@ fun Content(navController: NavController){
         Spacer(Modifier.height(10.dp))
         Text("What we Offer")
         Column {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(painter = painterResource(R.drawable.point_svgrepo_com), contentDescription = "",
-                    modifier = Modifier.height(10.dp)
-                )
-                Text("Get detected")
-            }
-            Text("")
-            Text("")
-            Text("")
-            Text("")
+            Text(text = "1. Disease Detection:")
+            Text(text = "- Quick upload option for plant images to diagnose diseases.", modifier = Modifier.padding(start = 16.dp))
+
+            Text(text = "2. Crop Recommendation:")
+            Text(text = "- Input soil and weather data for crop and fertilizer suggestions.", modifier = Modifier.padding(start = 16.dp))
+
+            Text(text = "3. Real-Time Weather Updates:")
+            Text(text = "- Display current weather conditions and wind data.", modifier = Modifier.padding(start = 16.dp))
+
+            Text(text = "4. Soil Data Highlights:")
+            Text(text = "- Show NPK values and pH with manual input or estimation options.", modifier = Modifier.padding(start = 16.dp))
+
+            Text(text = "5. Recent Activity:")
+            Text(text = "- View recent disease detection results and recommendations.", modifier = Modifier.padding(start = 16.dp))
+
         }
     }
     FloatingButton(navController)
@@ -177,6 +181,28 @@ fun GetService(painter: Painter,text:String,points: List<String>,onNav:()->Unit)
 
 @Composable
 fun RecentDetections(){
+    GetService(
+        painterResource(R.drawable.file_send_svgrepo_com),
+        "",
+        listOf<String>("Recent Detections")
+    ) {
+        GlobalStates.globalStates.navController?.navigate("recent/1")
+    }
 
+    GetService(
+        painterResource(R.drawable.hand_holding_seedling_svgrepo_com),
+        "",
+        listOf<String>("Recent Recommendations")
+    ) {
+        GlobalStates.globalStates.navController?.navigate("recent/2")
+    }
+
+    GetService(
+        painterResource(R.drawable.fertilizer_svgrepo_com),
+        "",
+        listOf<String>("Recent Fertilizers")
+    ) {
+        GlobalStates.globalStates.navController?.navigate("recent/3")
+    }
 }
 

@@ -12,13 +12,15 @@ import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.DataBase.DataBaseObject
 import com.example.myapplication.Screens.Login.LoadingScreen
 import com.example.myapplication.Screens.Login.LoginSignupMaimScreen
-import com.example.myapplication.Screens.Login.OtpValidation
+import com.example.myapplication.Screens.Login.OTPVerificationScreen
 import com.example.myapplication.Screens.Login.PreChecks
+import com.example.myapplication.Screens.Login.ResetScreen
 import com.example.myapplication.Screens.Login.home.CameraScreen
 import com.example.myapplication.Screens.Login.home.ChatScreen
 import com.example.myapplication.Screens.Login.home.CropRecommendScreen
 import com.example.myapplication.Screens.Login.home.DrawerInit
 import com.example.myapplication.Screens.Login.home.FertilizerScreen
+import com.example.myapplication.Screens.Login.home.RecentPage
 import com.example.myapplication.singleton.GlobalStates
 import com.example.myapplication.singleton.SharedPreference
 import dagger.hilt.android.AndroidEntryPoint
@@ -51,7 +53,8 @@ fun App(){
             LoginSignupMaimScreen(navController)
         }
         composable("otp/{id}"){
-            back-> OtpValidation(navController,back.arguments?.getString("id"))
+            back->
+            OTPVerificationScreen(navController, back.arguments?.getString("id").toString())
         }
         composable("home"){
             DrawerInit(navController)
@@ -68,6 +71,13 @@ fun App(){
         composable("crop"){
             CropRecommendScreen()
         }
+        composable("reset"){
+            ResetScreen()
+        }
+        composable("recent/{id}"){
+            RecentPage(it.arguments?.getString("id"))
+        }
+
     }
 
     if (GlobalStates.globalStates.loadingScreen.value){

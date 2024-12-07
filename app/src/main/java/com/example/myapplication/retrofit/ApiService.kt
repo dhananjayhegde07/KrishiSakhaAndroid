@@ -1,5 +1,6 @@
 package com.example.myapplication.retrofit
 
+import com.example.myapplication.DTO.CloseChatReq
 import com.example.myapplication.DTO.CropRecommendationReq
 import com.example.myapplication.DTO.CropRecommendationRes
 import com.example.myapplication.DTO.DetectReq
@@ -11,13 +12,16 @@ import com.example.myapplication.DTO.OtpRes
 import com.example.myapplication.DTO.PredictionFerReq
 import com.example.myapplication.DTO.PredictionFerRes
 import com.example.myapplication.DTO.ResendOtpReq
+import com.example.myapplication.DTO.ResendOtpRes
+import com.example.myapplication.DTO.ResetInitReq
+import com.example.myapplication.DTO.ResetInitRes
+import com.example.myapplication.DTO.ResetReq
 import com.example.myapplication.DTO.SessionChatRes
 import com.example.myapplication.DTO.SignUpReq
 import com.example.myapplication.DTO.SignUpRes
 import com.example.myapplication.DTO.TypesDTO
 import com.example.myapplication.utils.WeatherResponse
 import okhttp3.MultipartBody
-import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Multipart
@@ -35,7 +39,7 @@ interface ApiService {
     suspend fun validate(@Body otpReq: OtpReq): OtpRes
 
     @POST("/public/resendotp")
-    suspend fun resendOtp(@Body re:ResendOtpReq): Response<Unit>
+    suspend fun resendOtp(@Body re:ResendOtpReq): ResendOtpRes
 
     @POST("/getUser")
     suspend fun getUser(): Map<String, Any>
@@ -61,4 +65,14 @@ interface ApiService {
 
     @GET("/weatherSoilData")
     suspend fun getWeatherSoilData(): WeatherResponse
+
+    @POST("/public/resetInit")
+    suspend fun resetInit(@Body data: ResetInitReq) : ResetInitRes
+
+    @POST("/public/reset")
+    suspend fun reset(@Body data: ResetReq) : Unit
+
+    @POST("/closeChat")
+    suspend fun closeChat(@Body data: CloseChatReq) : Unit
+
 }

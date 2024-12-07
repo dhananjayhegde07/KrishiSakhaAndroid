@@ -3,6 +3,7 @@ package com.example.myapplication.Screens.Login
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,12 +16,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -28,18 +29,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.myapplication.DTO.LoginReq
 import com.example.myapplication.DTO.LoginRes
+import com.example.myapplication.DataBase.DataBaseObject
 import com.example.myapplication.SnackBar
 import com.example.myapplication.retrofit.Retrofit
 import com.example.myapplication.singleton.SharedPreference
 import com.example.myapplication.singleton.userDetail
 import com.google.gson.Gson
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,56 +75,11 @@ fun Login(navController: NavController){
             color = Color(0xD5FFFFFF)
         )
         Spacer(Modifier.height(50.dp))
-        TextField(value = username.value, onValueChange = {
-            username.value = it},
-            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                fontSize = 20.sp
-            ),
-            colors = TextFieldDefaults.textFieldColors(
-                // Set the indicator color to transparent
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(
-                    width = 0.dp,
-                    color = Color.Transparent,
-                    shape = RoundedCornerShape(5.dp)
-                )
-                .clip(RoundedCornerShape(5.dp)),
-            label ={Text(
-                text = "Username",
-                color = Color(0xD5FFFFFF)
-            )}
-            )
+        GetTextFieldlogin("username", username, false)
 
         Spacer(Modifier.height(50.dp))
-        TextField(value = password.value, onValueChange = {
-            password.value = it},
-            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                fontSize = 20.sp
-            ),
-            visualTransformation = PasswordVisualTransformation()
-            ,
-            colors = TextFieldDefaults.textFieldColors(
-                // Set the indicator color to transparent
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(
-                    width = 0.dp,
-                    color = Color.Transparent,
-                    shape = RoundedCornerShape(5.dp)
-                )
-                .clip(RoundedCornerShape(5.dp)),
-            label ={Text(
-                text = "Password",
-                color = Color(0xD5FFFFFF)
-            )}
-        )
+        GetTextFieldlogin("Password",password,true)
+        Spacer(Modifier.height(50.dp))
         Row (horizontalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxWidth()
         ){
@@ -146,6 +106,11 @@ fun Login(navController: NavController){
                             else->{
                                 userDetail.jwt= res.jwt.toString()
                                 userDetail.username=res.username.toString()
+                                userDetail.principal = withContext(Dispatchers.IO){
+                                    DataBaseObject.INSTANCE?.userDao()?.getPrincipal(
+                                        res.username.toString()
+                                    )
+                                }
                                 saveUserToDB(username.value, res.jwt.toString())
                                 Log.d("TAG", "Login: navigating")
                                 navController.navigate("home")
@@ -166,8 +131,15 @@ fun Login(navController: NavController){
                 Text("Login")
             }
         }
-        Spacer(Modifier.height(50.dp))
-
+        Spacer(Modifier.height(20.dp))
+        Text(
+            text = "Forgot password?",
+            color = Color.White,
+            fontSize = 18.sp,
+            modifier = Modifier.clickable{
+                navController.navigate("reset")
+            }
+        )
     }
 }
 
@@ -181,10 +153,39 @@ suspend fun loginSubmit(username:String, password:String): LoginRes{
     catch (e: Exception){
         LoginRes()
     }
+
 }
+
 
 
 fun saveUserToDB(username: String, jwt: String){
     SharedPreference.saveData("username",username)
     SharedPreference.saveData("jwt",jwt)
+}
+
+
+@Composable
+fun GetTextFieldlogin(label: String, text: MutableState<String>, bool: Boolean){
+    TextField(
+        value = text.value,
+        onValueChange = { newValue ->
+                text.value = newValue
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(60.dp)
+            .clip(RoundedCornerShape(10.dp)),
+        label = {Text(label)},
+        visualTransformation = if (!bool) VisualTransformation.None else PasswordVisualTransformation(),
+        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 17.sp),
+        colors = TextFieldDefaults.colors(
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            unfocusedContainerColor = Color.White,
+            focusedContainerColor = Color.White,
+            cursorColor = Color(0xFF627362),
+            focusedLabelColor = Color.Black,
+        )
+    )
+
 }

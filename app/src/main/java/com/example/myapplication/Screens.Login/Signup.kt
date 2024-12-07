@@ -11,14 +11,13 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -32,7 +31,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,10 +38,14 @@ import androidx.navigation.NavController
 import com.example.myapplication.DTO.AddressDTO
 import com.example.myapplication.DTO.SignUpReq
 import com.example.myapplication.DTO.SignUpRes
+import com.example.myapplication.DataBase.DataBaseObject
+import com.example.myapplication.DataBase.User
 import com.example.myapplication.SnackBar
 import com.example.myapplication.retrofit.Retrofit
 import com.google.gson.Gson
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.IOException
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -86,130 +88,18 @@ fun Signup(navController: NavController){
             color = Color(0xD5FFFFFF)
         )
         Spacer(Modifier.height(50.dp))
-        TextField(value = username.value, onValueChange = {
-            username.value = it},
-            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                fontSize = 20.sp
-            ),
-            colors = TextFieldDefaults.textFieldColors(
-                // Set the indicator color to transparent
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(
-                    width = 0.dp,
-                    color = Color.Transparent,
-                    shape = RoundedCornerShape(5.dp)
-                )
-                .clip(RoundedCornerShape(5.dp)),
-            label ={Text(
-                text = "Username",
-                color = Color(0xD5FFFFFF)
-            )}
-        )
-
+        GetTextFieldlogin("username",username,false)
         Spacer(Modifier.height(50.dp))
-        TextField(value = password.value, onValueChange = {
-            password.value = it},
-            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                fontSize = 20.sp
-            ),
-            visualTransformation = PasswordVisualTransformation(),
-            colors = TextFieldDefaults.textFieldColors(
-                // Set the indicator color to transparent
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(
-                    width = 0.dp,
-                    color = Color.Transparent,
-                    shape = RoundedCornerShape(5.dp)
-                )
-                .clip(RoundedCornerShape(5.dp)),
-            label ={Text(
-                text = "Password",
-                color = Color(0xD5FFFFFF)
-            )}
-        )
+        GetTextFieldlogin("password",password,true)
         Spacer(Modifier.height(50.dp))
 
-        TextField(value = repassword.value, onValueChange = {
-            repassword.value = it},
-            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                fontSize = 20.sp
-            ),
-            colors = TextFieldDefaults.textFieldColors(
-                // Set the indicator color to transparent
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(
-                    width = 0.dp,
-                    color = Color.Transparent,
-                    shape = RoundedCornerShape(5.dp)
-                )
-                .clip(RoundedCornerShape(5.dp)),
-            label ={Text(
-                text = "re-enter password",
-                color = Color(0xD5FFFFFF)
-            )}
-        )
+        GetTextFieldlogin("Re-password",repassword,true)
 
         Spacer(Modifier.height(50.dp))
-        TextField(value = email.value, onValueChange = {
-            email.value = it},
-            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                fontSize = 20.sp
-            ),
-            colors = TextFieldDefaults.textFieldColors(
-                // Set the indicator color to transparent
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(
-                    width = 0.dp,
-                    color = Color.Transparent,
-                    shape = RoundedCornerShape(5.dp)
-                )
-                .clip(RoundedCornerShape(5.dp)),
-            label ={Text(
-                text = "Email",
-                color = Color(0xD5FFFFFF)
-            )}
-        )
+        GetTextFieldlogin("E-mail",email,false)
 
         Spacer(Modifier.height(50.dp))
-        TextField(value = phone.value, onValueChange = {
-            phone.value = it},
-            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                fontSize = 20.sp
-            ),
-            colors = TextFieldDefaults.textFieldColors(
-                // Set the indicator color to transparent
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(
-                    width = 0.dp,
-                    color = Color.Transparent,
-                    shape = RoundedCornerShape(5.dp)
-                )
-                .clip(RoundedCornerShape(5.dp)),
-            label ={Text(
-                text = "Phone number",
-                color = Color(0xD5FFFFFF)
-            )}
-        )
+        GetTextFieldlogin("Phone",phone,false)
 
         Spacer(Modifier.height(50.dp))
         address(state,dist,pin)
@@ -255,8 +145,18 @@ fun Signup(navController: NavController){
                                 SnackBar.showSnack("Signup Successful", SnackbarDuration.Short)
                             }
                         }
-
-                        // Re-enable the button after the coroutine finishes
+                        withContext(Dispatchers.IO){
+                            DataBaseObject.INSTANCE?.userDao()?.insertUser(
+                                User().apply {
+                                    this.username= username.value
+                                    this.password=password.value
+                                    this.name=""
+                                    this.email=email.value
+                                    this.phone = phone.value
+                                    this.pin=pin.value
+                                }
+                            )
+                        }
                         enabled.value = true
                         navController.navigate("otp/${res.otpId}")
                     }
@@ -270,7 +170,7 @@ fun Signup(navController: NavController){
                     containerColor = Color(0xD5356E28)
                 )
             ) {
-                Text("Login")
+                Text("Sign Up")
             }
         }
     }
@@ -293,89 +193,35 @@ fun address( state: MutableState<String>,  dist:MutableState<String>,  pin:Mutab
             textAlign = TextAlign.Center,
             color = Color(0xD5FFFFFF)
         )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            TextField(value = state.value, onValueChange = {
-                state.value = it},
-                textStyle = MaterialTheme.typography.bodyLarge.copy(
-                    fontSize = 20.sp
-                ),
-                colors = TextFieldDefaults.textFieldColors(
-                    // Set the indicator color to transparent
-                    unfocusedIndicatorColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(
-                        width = 0.dp,
-                        color = Color.Transparent,
-                        shape = RoundedCornerShape(5.dp)
-                    )
-                    .clip(RoundedCornerShape(5.dp))
-                    .weight(.45f),
-                label ={Text(
-                    text = "State",
-                    color = Color(0xD5FFFFFF)
-                )}
-            )
-            Spacer(modifier = Modifier
-                .width(5.dp)
-                .weight(.1f))
-            TextField(value = dist.value, onValueChange = {
-                dist.value = it},
-                textStyle = MaterialTheme.typography.bodyLarge.copy(
-                    fontSize = 20.sp
-                ),
-                colors = TextFieldDefaults.textFieldColors(
-                    // Set the indicator color to transparent
-                    unfocusedIndicatorColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(
-                        width = 0.dp,
-                        color = Color.Transparent,
-                        shape = RoundedCornerShape(5.dp)
-                    )
-                    .clip(RoundedCornerShape(5.dp))
-                    .weight(.45f),
-                label ={Text(
-                    text = "District",
-                    color = Color(0xD5FFFFFF)
-                )}
-            )
-        }
+        Spacer(modifier = Modifier.height(20.dp))
+        GetTextFieldlogin("District",dist,false)
         Spacer(modifier = Modifier.height(50.dp))
-        TextField(value = pin.value, onValueChange = {
-            pin.value = it},
-            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                fontSize = 20.sp,
-
-            ),
-            colors = TextFieldDefaults.textFieldColors(
-                // Set the indicator color to transparent
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent
-            ),
+        GetTextFieldlogin("State",state,false)
+        Spacer(modifier = Modifier.height(50.dp))
+        TextField(
+            value = pin.value,
+            onValueChange = { newValue ->
+                if (newValue.matches(Regex("^\\d*(\\.\\d*)?\$")) ) {
+                    pin.value = newValue
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
-                .border(
-                    width = 0.dp,
-                    color = Color.Transparent,
-                    shape = RoundedCornerShape(5.dp)
-                )
-                .clip(RoundedCornerShape(5.dp)),
-            label ={Text(
-                text = "PIN",
-                color = Color(0xD5FFFFFF)
-            )}
+                .clip(RoundedCornerShape(10.dp)),
+            label = {Text("Pin")},
+            keyboardOptions = KeyboardOptions.Default.copy(
+                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+            ),
+            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 17.sp),
+            colors = TextFieldDefaults.colors(
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                unfocusedContainerColor = Color.White,
+                focusedContainerColor = Color.White,
+                cursorColor = Color(0xFF627362),
+                focusedLabelColor = Color.Black,
+            )
         )
-
     }
 }
 
