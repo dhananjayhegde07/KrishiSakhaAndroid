@@ -1,8 +1,10 @@
 package com.example.myapplication.Screens.Login.home
 
 import android.util.Log
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,12 +16,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -28,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,7 +44,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
@@ -62,16 +73,27 @@ import java.util.TimeZone
 
 @Composable
 fun FertilizerScreen(){
-    val auto = remember { mutableStateOf(true) }
+    val input = remember { mutableStateOf<PredictionFerReq?>(null) }
     val show = remember { mutableStateOf(false) }
     val result = remember { mutableStateOf<FertilizerRecommendModel?>(null) }
     val info = remember { mutableStateOf(false) }
     if (show.value){
-        ResultsPageFer(show,result)
+        ResultsPageFer(show,result,input)
+    }
+    val scale = remember { Animatable(0f) } // Initial scale set to 0
+    LaunchedEffect(info.value) {
+        scale.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing) // Smooth scaling
+        )
     }
     if (info.value){
         PopUpScreenFertilizer(info)
-        Box(Modifier.fillMaxSize().background(Color(0x70282828)).zIndex(1f))
+        Box(Modifier.graphicsLayer(
+            scaleX = scale.value,
+            scaleY = scale.value,
+            transformOrigin = TransformOrigin(1f, 0f)
+        ).fillMaxSize().background(Color(0x70282828)).zIndex(1f))
     }
     Box(
         Modifier
@@ -84,7 +106,7 @@ fun FertilizerScreen(){
                 .fillMaxHeight(.7f)
                 .clip(RoundedCornerShape(10.dp))
                 .align(Alignment.Center)
-                .background(Color(0x5CAFAEAE))
+                .background(Color(0xFFD1E6D1))
         ) {
             Box(
                 contentAlignment = Alignment.Center,
@@ -94,7 +116,7 @@ fun FertilizerScreen(){
             ) {
                 Text("Fertilizer", fontSize = 20.sp,)
             }
-            AutoFertilizer(show,result)
+            AutoFertilizer(show,result,input)
         }
         TopBarFer(info)
     }
@@ -102,40 +124,74 @@ fun FertilizerScreen(){
 }
 
 @Composable
-fun PopUpScreenFertilizer(info: MutableState<Boolean>) {
+fun PopUpScreenFertilizer(info: MutableState<Boolean>, ) {
     Log.d("TAG", "PopUpScreenFertilizer: ")
+    val scale = remember { Animatable(0f) } // Initial scale set to 0
+    LaunchedEffect(Unit) {
+        scale.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing) // Smooth scaling
+        )
+    }
     Popup(
         alignment = Alignment.TopEnd,
         onDismissRequest = { info.value = false },
         offset = _root_ide_package_.androidx.compose.ui.unit.IntOffset(x=-100,y=150)
     ) {
         Box(
-            modifier = Modifier.fillMaxWidth(.7f).fillMaxHeight(.5f).clip(RoundedCornerShape(10.dp))
-                .background(Color.White).padding(10.dp)
-        ){
-            Column(modifier = Modifier.padding(16.dp)) {
+            modifier = Modifier
+                .graphicsLayer(
+                    scaleX = scale.value,
+                    scaleY = scale.value,
+                    transformOrigin = TransformOrigin(1f, 0f)
+                )
+                .fillMaxWidth(0.7f)
+                .fillMaxHeight(0.5f)
+                .clip(RoundedCornerShape(15.dp)) // Enhanced roundness
+                .background(Color(0xFFE8F5E9)) // Light green background for consistency // Add a green border
+                .padding(5.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(10.dp)
+                    .fillMaxSize()
+            ) {
+                // Header Text
                 Text(
-                    text = "NPK Values in Fertilizers:",
-                    modifier = Modifier.padding(bottom = 12.dp)
+                    text = "🌱 Crop Recommendation Factors:",
+                    modifier = Modifier.padding(bottom = 12.dp),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF4CAF50) // Green header
                 )
 
-                Text(
-                    text = "• Nitrogen (N): Promotes leaf and stem growth. Essential for chlorophyll production.",
-
-                    modifier = Modifier.padding(bottom = 8.dp)
+                // Information Texts
+                val factors = listOf(
+                    "Nitrogen (N): Promotes leaf and stem growth. Essential for chlorophyll production.",
+                    "Phosphorus (P): Encourages root development and reproductive growth.",
+                    "Potassium (K): Improves overall plant health, resistance, and quality.",
                 )
 
-                Text(
-                    text = "• Phosphorus (P): Encourages root development and reproductive growth.",
-
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
-                Text(
-                    text = "• Potassium (K): Improves overall plant health, resistance, and quality.",
-
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+                factors.forEach { text ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = null,
+                            modifier = Modifier.size(10.dp)
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            text = text,
+                            fontSize = 16.sp,
+                            color = Color.Black, // Green text
+                            lineHeight = 20.sp
+                        )
+                    }
+                }
             }
         }
     }
@@ -193,7 +249,11 @@ fun TopBarFer(info: MutableState<Boolean>) {
 }
 
 @Composable
-fun AutoFertilizer(show: MutableState<Boolean>, result: MutableState<FertilizerRecommendModel?>) {
+fun AutoFertilizer(
+    show: MutableState<Boolean>,
+    result: MutableState<FertilizerRecommendModel?>,
+    input: MutableState<PredictionFerReq?>
+) {
     var n = remember { mutableStateOf("") }
     var p = remember { mutableStateOf("") }
     var k = remember { mutableStateOf("") }
@@ -204,140 +264,112 @@ fun AutoFertilizer(show: MutableState<Boolean>, result: MutableState<FertilizerR
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(10.dp)
+            .padding(16.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(Color(0xFFD1E6D1))// Soft green background
+
     ) {
-        OutlinedTextField(
-            value = n.value,
-            onValueChange = { newValue ->
-                if (newValue.matches(Regex("^\\d*(\\.\\d*)?\$")) && n.value.length<3) {
-                    n.value = newValue
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth(0.5f)
-                .clip(RoundedCornerShape(10.dp)),
-            label = {Text("Nitrogen")},
-            keyboardOptions = KeyboardOptions.Default.copy(
-                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
-            ),
-            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 17.sp),
-            colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                unfocusedContainerColor = Color.White,
-                focusedContainerColor = Color.White,
-                cursorColor = Color(0xFF627362),
-                focusedLabelColor = Color.Black,
+        // Input Fields for Nitrogen, Phosphorus, and Potassium
+        listOf("Nitrogen" to n, "Phosphorus" to p, "Potassium" to k).forEach { (label, value) ->
+            OutlinedTextField(
+                value = value.value,
+                onValueChange = { newValue ->
+                    if (newValue.matches(Regex("^\\d*(\\.\\d*)?\$")) && value.value.length < 3) {
+                        value.value = newValue
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth(0.7f)
+                    .clip(RoundedCornerShape(10.dp)) ,// Spacing between fields
+                label = { Text(label) },
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Number
+                ),
+                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 17.sp),
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    unfocusedContainerColor = Color.White,
+                    focusedContainerColor = Color.White,
+                    cursorColor = Color(0xFF627362),
+                    focusedLabelColor = Color.Black
+                )
             )
+            Spacer(Modifier.height(20.dp))
+        }
+
+        // Warning Text
+        Text(
+            text = "Warning: The accuracy of fertilizer recommendations may vary based on available data and local variations.",
+            fontSize = 16.sp,
+            color = Color.Red,
+            modifier = Modifier.padding(vertical = 10.dp)
         )
 
-        Spacer(Modifier.height(20.dp))
-        OutlinedTextField(
-            value = p.value,
-            onValueChange = { newValue ->
-                if (newValue.matches(Regex("^\\d*(\\.\\d*)?\$")) && p.value.length<3) {
-                    p.value = newValue
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth(0.5f)
-                .clip(RoundedCornerShape(10.dp)),
-            label = {Text("Phosphorus")},
-            keyboardOptions = KeyboardOptions.Default.copy(
-                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
-            ),
-            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 17.sp),
-            colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                unfocusedContainerColor = Color.White,
-                focusedContainerColor = Color.White,
-                cursorColor = Color(0xFF627362),
-                focusedLabelColor = Color.Black,
-            )
-        )
-        Spacer(Modifier.height(20.dp))
-        OutlinedTextField(
-            value = k.value,
-            onValueChange = { newValue ->
-                if (newValue.matches(Regex("^\\d*(\\.\\d*)?\$")) && k.value.length<3) {
-                    k.value = newValue
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth(0.5f)
-                .clip(RoundedCornerShape(10.dp)),
-            label = {Text("Potassium")},
-            keyboardOptions = KeyboardOptions.Default.copy(
-                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
-            ),
-            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 17.sp),
-            colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                unfocusedContainerColor = Color.White,
-                focusedContainerColor = Color.White,
-                cursorColor = Color(0xFF627362),
-                focusedLabelColor = Color.Black,
-            )
-        )
-
-    }
-    Spacer(Modifier.height(20.dp))
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(10.dp)
-    ) {
-        Text(text = "Warning: The accuracy of fertilizer recommendations may vary based on available data and local variations.",
-            fontSize = 15.sp, modifier = Modifier.height(50.dp), color = Color.Red)
         Spacer(Modifier.height(30.dp))
-    }
-    Row {
-        Button(
-            onClick = {
-                scope.launch{
-                    if (n.value==""||p.value==""||k.value==""){
-                        SnackBar.s.showSnackbar("All fields are mandatory")
-                        return@launch
-                    }
-                    val req=PredictionFerReq(
-                        n.value.toDouble(),
-                        p.value.toDouble(),
-                        k.value.toDouble()
-                    )
-                    val res=  withContext(Dispatchers.IO){
-                        getFertilizer(req)
-                    }
-                    result.value=res.recommend
-                    if (result.value!=null){
-                        withContext(Dispatchers.IO){
-                            DataBaseObject.INSTANCE?.fertilizerDao()?.save(
-                                FertilizerSave().apply {
-                                    username = userDetail.username
-                                    timestamp = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-                                        Locale.getDefault()).apply {
-                                        timeZone = TimeZone.getTimeZone("UTC")
-                                    }.format(Date())
-                                    input = req
-                                    this.result = result.value
-                                }
-                            )
-                        }
-                    }
-                    show.value=true
-                }
-            }
+
+        // Submit Button
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
         ) {
-            Text("get")
+            Button(
+                onClick = {
+                    scope.launch {
+                        // Validate input
+                        if (n.value == "" || p.value == "" || k.value == "") {
+                            SnackBar.s.showSnackbar("All fields are mandatory")
+                            return@launch
+                        }
+                        val req = PredictionFerReq(
+                            n.value.toDouble(),
+                            p.value.toDouble(),
+                            k.value.toDouble()
+                        )
+                        val res = withContext(Dispatchers.IO) {
+                            getFertilizer(req)
+                        }
+                        result.value = res.recommend
+                        if (result.value != null) {
+                            withContext(Dispatchers.IO) {
+                                DataBaseObject.INSTANCE?.fertilizerDao()?.save(
+                                    FertilizerSave().apply {
+                                        username = userDetail.username
+                                        timestamp = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                                            Locale.getDefault()).apply {
+                                            timeZone = TimeZone.getTimeZone("UTC")
+                                        }.format(Date())
+                                        this.input = req
+                                        this.result = result.value
+                                    }
+                                )
+                            }
+                            input.value = req
+                        }
+                        show.value = true
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth(0.5f)
+                    .padding(vertical = 16.dp),
+                shape = RoundedCornerShape(50.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C9A6C)) // Green Button
+            ) {
+                Text("Proceed", color = Color.White)
+            }
         }
     }
 }
 
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ResultsPageFer(show: MutableState<Boolean>, result: MutableState<FertilizerRecommendModel?>) {
+fun ResultsPageFer(
+    show: MutableState<Boolean>,
+    result: MutableState<FertilizerRecommendModel?>,
+    input: MutableState<PredictionFerReq?>
+) {
     val state= rememberModalBottomSheetState()
     val translate = remember { mutableStateOf(false) }
     ModalBottomSheet(
@@ -349,196 +381,14 @@ fun ResultsPageFer(show: MutableState<Boolean>, result: MutableState<FertilizerR
     ) {
         when(result.value){
             null->{
-                Text("unable to Predict")
+                Unable(listOf(
+                    "Check Internet Connection",
+                    "Server May be offline",
+                    "Retry again"
+                ))
             }
             else -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(10.dp)
-                        .verticalScroll(state = rememberScrollState(), enabled = true)
-                ) {
-                    Row(
-                        modifier = Modifier.height(60.dp).fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Color(0x884C8325)),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Found It...!!")
-                        Icon(painter = painterResource(R.drawable.translate_svgrepo_com), contentDescription = ""
-                            , modifier = Modifier.height(30.dp).clickable{
-                                translate.value= ! translate.value
-                            }
-                        )
-                    }
-                    Text("Name", fontSize = 18.sp, color = Color(0xBA313131))
-                    Spacer(
-                        Modifier
-                            .fillMaxWidth(.7f)
-                            .height(1.dp)
-                            .border(color = Color.Black, width = 1.dp))
-                    Row(
-                        modifier = Modifier
-                            .height(70.dp)
-                            .padding(start = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        Text(result.value?.name?:"")
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    Text("Scientific Name", fontSize = 18.sp, color = Color(0xBA313131))
-                    Spacer(
-                        Modifier
-                            .fillMaxWidth(.7f)
-                            .height(1.dp)
-                            .border(color = Color.Black, width = 1.dp))
-                    Row(
-                        modifier = Modifier
-                            .height(70.dp)
-                            .padding(start = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        Text(result.value?.scientificName?:"")
-                    }
-                    Text("NPK Composition", fontSize = 18.sp, color = Color(0xBA313131))
-                    Spacer(
-                        Modifier
-                            .fillMaxWidth(.7f)
-                            .height(1.dp)
-                            .border(color = Color.Black, width = 1.dp))
-                    Row(
-                        modifier = Modifier
-                            .height(70.dp)
-                            .padding(start = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        Text(result.value?.NPK_Composition?:"")
-                    }
-                    Text("Application Rate", fontSize = 18.sp, color = Color(0xBA313131))
-                    Spacer(
-                        Modifier
-                            .fillMaxWidth(.7f)
-                            .height(1.dp)
-                            .border(color = Color.Black, width = 1.dp))
-                    Row(
-                        modifier = Modifier
-                            .height(70.dp)
-                            .padding(start = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        Text(result.value?.applicationRate?:"")
-                    }
-                    Text("Best Time To Apply", fontSize = 18.sp, color = Color(0xBA313131))
-                    Spacer(
-                        Modifier
-                            .fillMaxWidth(.7f)
-                            .height(1.dp)
-                            .border(color = Color.Black, width = 1.dp))
-                    Row(
-                        modifier = Modifier
-                            .height(70.dp)
-                            .padding(start = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        Text(result.value?.bestTimeToApply?:"")
-                    }
-                    Text("Storage and Handling", fontSize = 18.sp, color = Color(0xBA313131))
-                    Spacer(
-                        Modifier
-                            .fillMaxWidth(.7f)
-                            .height(1.dp)
-                            .border(color = Color.Black, width = 1.dp))
-                    Row(
-                        modifier = Modifier
-                            .height(70.dp)
-                            .padding(start = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        Text(result.value?.storageAndHandling?:"")
-                    }
-                    Text("Cost Estimate", fontSize = 18.sp, color = Color(0xBA313131))
-                    Spacer(
-                        Modifier
-                            .fillMaxWidth(.7f)
-                            .height(1.dp)
-                            .border(color = Color.Black, width = 1.dp))
-                    Row(
-                        modifier = Modifier
-                            .height(70.dp)
-                            .padding(start = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        Text(result.value?.costEstimate?:"")
-                    }
-                    Text("Organic V/S Synthetic", fontSize = 18.sp, color = Color(0xBA313131))
-                    Spacer(
-                        Modifier
-                            .fillMaxWidth(.7f)
-                            .height(1.dp)
-                            .border(color = Color.Black, width = 1.dp))
-                    Row(
-                        modifier = Modifier
-                            .height(70.dp)
-                            .padding(start = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        Text(result.value?.organicVsSynthetic?:"")
-                    }
-                    Text("Tips", fontSize = 18.sp, color = Color(0xBA313131))
-                    Spacer(
-                        Modifier
-                            .fillMaxWidth(.7f)
-                            .height(1.dp)
-                            .border(color = Color.Black, width = 1.dp))
-                    Column(
-                        modifier = Modifier.padding( start = 20.dp, top = 20.dp),
-                    ){
-                        GetPoints(
-                            if(translate.value)
-                                result.value?.tips?.kannada
-                            else
-                                result.value?.tips?.english
-                        )
-                    }
-                    Text("Recommended Crops", fontSize = 18.sp, color = Color(0xBA313131))
-                    Spacer(
-                        Modifier
-                            .fillMaxWidth(.7f)
-                            .height(1.dp)
-                            .border(color = Color.Black, width = 1.dp))
-                    Column(
-                        modifier = Modifier.padding( start = 20.dp, top = 20.dp),
-                    ){
-                        GetPoints(
-                            result.value?.recommendedCrops
-                        )
-                    }
-                    Text("Potential Risks", fontSize = 18.sp, color = Color(0xBA313131))
-                    Spacer(
-                        Modifier
-                            .fillMaxWidth(.7f)
-                            .height(1.dp)
-                            .border(color = Color.Black, width = 1.dp))
-                    Column(
-                        modifier = Modifier.padding( start = 20.dp, top = 20.dp),
-                    ){
-                        GetPoints(
-                            result.value?.potentialRisks
-                        )
-                    }
-                    Text("Benefits", fontSize = 18.sp, color = Color(0xBA313131))
-                    Spacer(
-                        Modifier
-                            .fillMaxWidth(.7f)
-                            .height(1.dp)
-                            .border(color = Color.Black, width = 1.dp))
-                    Column(
-                        modifier = Modifier.padding( start = 20.dp, top = 20.dp),
-                    ){
-                        GetPoints(
-                            result.value?.benefits
-                        )
-                    }
-                }
+                ShowFertilizerRecommendation(result.value,input.value)
             }
         }
     }

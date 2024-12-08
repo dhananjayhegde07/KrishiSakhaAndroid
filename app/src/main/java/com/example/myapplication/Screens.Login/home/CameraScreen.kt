@@ -245,7 +245,7 @@ fun CameraView(){
                     )
             }
             SelectTypes(selectedType,types.value)
-            Image_select(selectedType,result,showResults)
+            Image_select(selectedType,result,showResults,outputFile)
         }
     }
     Box(
@@ -271,13 +271,18 @@ fun CameraView(){
         }
     }
     if (showResults.value){
-        ResultsPage(showResults,result)
+        ResultsPage(showResults,result,outputFile)
     }
 }
 
 
 @Composable
-fun Image_select(selectedType: MutableState<String?>, result: MutableState<DetectRes?>, showResults: MutableState<Boolean>){
+fun Image_select(
+    selectedType: MutableState<String?>,
+    result: MutableState<DetectRes?>,
+    showResults: MutableState<Boolean>,
+    outputFile: File
+){
     var cx = remember { mutableStateOf<Uri?>(null) }
     val context=LocalContext.current
     var launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) {
@@ -291,6 +296,7 @@ fun Image_select(selectedType: MutableState<String?>, result: MutableState<Detec
             val file = uriToFile(cx.value!!,context)
             result.value= GetDetect(file,selectedType.value)
             GlobalStates.globalStates.notLoading()
+            outputFile.writeBytes(file.readBytes())
             showResults.value=true
             cx.value=null
         }
@@ -382,8 +388,4 @@ fun uriToFile(uri: Uri, context: Context): File {
     }
 
     return file
-}
-
-suspend fun saveDisease(){
-
 }

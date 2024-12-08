@@ -1,5 +1,6 @@
 package com.example.myapplication.Screens.Login.home
 
+import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -26,6 +27,8 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -39,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -56,6 +60,7 @@ import com.example.myapplication.singleton.userDetail
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -64,7 +69,11 @@ import java.util.TimeZone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ResultsPage(showResults: MutableState<Boolean>,result: MutableState<DetectRes?>){
+fun ResultsPage(
+    showResults: MutableState<Boolean>,
+    result: MutableState<DetectRes?>,
+    outputFile: File
+){
     val sheetState= rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val scope= rememberCoroutineScope()
     val translate = remember { mutableStateOf(false) }
@@ -120,7 +129,7 @@ fun ResultsPage(showResults: MutableState<Boolean>,result: MutableState<DetectRe
                 }
             }
             else -> {
-                ShowRes(result.value?.disease)
+                ShowRes(result.value?.disease,outputFile)
             }
         }
 
@@ -128,87 +137,75 @@ fun ResultsPage(showResults: MutableState<Boolean>,result: MutableState<DetectRe
 }
 
 @Composable
-fun ShowRes(result: DiseasesModel?) {
-    val translate = remember { mutableStateOf(false) }
+fun ShowRes(result: DiseasesModel?, outputFile: File) {
+    val showKannada = remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(state = rememberScrollState(), enabled = true)
-            .background(Color(0xFFE8F5E9))
-            .padding(10.dp)// Light green background for the entire screen
-    ) {
-        // Title Section
-        Row(
+            .background(Color(0xFFF1F8E9)) // Light green background
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState())
+    ){
+        Row (
             modifier = Modifier
-                .height(60.dp)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color(0xFF81C784)) // Light Green background for this row
-                .padding(horizontal = 16.dp),
+                .background(Color(0xFF81C784)) // Green header
+                .padding(16.dp)
+                .clip(RoundedCornerShape(10.dp)),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "Found It...!!",
-                fontSize = 20.sp,
-                color = Color.White,
-                fontWeight = FontWeight.Bold
+                text = "Found",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
             )
-            Icon(
-                painter = painterResource(R.drawable.translate_svgrepo_com),
-                contentDescription = null,
-                modifier = Modifier
-                    .height(30.dp)
-                    .clickable {
-                        translate.value = !translate.value
-                    },
-                tint = Color.White
-            )
-        }
-
-        Spacer(Modifier.height(20.dp))
-
-        // Name Section
-        SectionHeader(title = "Name")
-        CustomRow(
-            text = if (translate.value) result?.kannadaName ?: "" else result?.className ?: ""
-        )
-
-        Spacer(Modifier.height(16.dp))
-
-        // Description Section
-        SectionHeader(title = "Description")
-        CustomRow(
-            text = if (translate.value) result?.kannadaDescription ?: "" else result?.description ?: ""
-        )
-
-        Spacer(Modifier.height(16.dp))
-
-        // Cause Section
-        SectionHeader(title = "Cause")
-        CustomRow(
-            text = if (translate.value) result?.kannadaCause ?: "" else result?.cause ?: ""
-        )
-
-        Spacer(Modifier.height(16.dp))
-
-        // Recommended Actions Section
-        SectionHeader(title = "Recommended Actions")
-        Column(
-            modifier = Modifier.padding(start = 20.dp)
-        ) {
-            result?.recommendedActions?.forEach {
-                Spacer(Modifier.height(10.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 8.dp)
+            ) {
                 Text(
-                    text = if (translate.value) it.kannadaAction else it.action,
+                    text = if (showKannada.value) "ಕನ್ನಡ" else "English",
                     fontSize = 16.sp,
-                    color = Color(0xFF388E3C) // Green color for actions
+                    color = Color(0xFF627362),
+                    fontWeight = FontWeight.SemiBold
                 )
-
+                Spacer(Modifier.width(8.dp))
+                Switch(
+                    checked = showKannada.value,
+                    onCheckedChange = { showKannada.value = it },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color(0xFF81C784),
+                        uncheckedThumbColor = Color(0xFF81C784),
+                        checkedTrackColor = Color(0xFF388E3C),
+                        uncheckedTrackColor = Color(0xFFC8E6C9)
+                    )
+                )
             }
         }
+        Spacer(Modifier.height(10.dp))
+        Section("Image preview","")
+        val bitmap = remember(outputFile) {
+            BitmapFactory.decodeFile(outputFile.absolutePath)?.asImageBitmap()
+        }
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center){
+            if (bitmap==null){
+                Text("NO preview available")
+            }else{
+                Image(bitmap = bitmap, contentDescription = "", modifier = Modifier.height(100.dp))
+            }
+        }
+        Section("Name",if(showKannada.value) result?.kannadaName else result?.className)
+        Section("Description",if(showKannada.value) result?.kannadaDescription else result?.description)
+        Section("Cause",if(showKannada.value) result?.kannadaCause else result?.cause)
+        var list=result?.recommendedActions?.map {
+            if(showKannada.value) it.kannadaAction else it.action
+        } ?: listOf()
+        ListSection("Recommended Actions",list)
     }
+
 }
 
 @Composable

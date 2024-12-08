@@ -1,8 +1,10 @@
 package com.example.myapplication.Screens.Login.home
 
 import android.util.Log
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -15,12 +17,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -29,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,8 +45,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
@@ -70,13 +82,26 @@ fun CropRecommendScreen(){
     val show = remember { mutableStateOf(false) }
     val result = remember { mutableStateOf<CropRecommendationModel?>(null) }
     val info = remember { mutableStateOf(false) }
+    val input = remember { mutableStateOf<CropRecReq?>(null) }
     if (show.value){
-        ResultsPagecrop(show,result)
+        ResultsPagecrop(show,result,input)
+    }
+    val scale = remember { Animatable(0f) } // Initial scale set to 0
+    LaunchedEffect(info.value) {
+        scale.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing) // Smooth scaling
+        )
     }
     if (info.value){
         PopUpScreenRecommendation(info)
         Box(
             Modifier
+                .graphicsLayer(
+                    scaleX = scale.value,
+                    scaleY = scale.value,
+                    transformOrigin = TransformOrigin(1f, 0f)
+                )
                 .fillMaxSize()
                 .background(Color(0x70282828))
                 .zIndex(1f))
@@ -86,107 +111,151 @@ fun CropRecommendScreen(){
         Modifier
             .fillMaxSize()
             .padding(top = 10.dp, start = 10.dp)
-    ){
+    ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth(.95f)
-                .fillMaxHeight(.8f)
+                .fillMaxWidth(0.95f)
+                .fillMaxHeight(0.8f)
                 .clip(RoundedCornerShape(10.dp))
                 .align(Alignment.Center)
-                .background(Color(0x5CAFAEAE))
+                .background(Color(0xFFE8F5E9)) // Light green background for the card
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(40.dp)
+                    .height(50.dp)
+                    .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp))
+                    .background(Color(0xFF4CAF50)) // Green header bar
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .weight(.5f)
+                        .weight(0.5f)
                         .fillMaxHeight()
                         .background(
-                            if (auto.value) Color(
-                                0x5C5CE35C
-                            ) else Color.Transparent
+                            if (auto.value) Color(0xFF81C784) // Active state: lighter green
+                            else Color(0xFF4CAF50) // Inactive state: header green
                         )
-                        .clickable {
-                            auto.value = true
-                        }
-                ){
-                    Text("Auto")
+                        .clickable { auto.value = true }
+                ) {
+                    Text(
+                        "Auto",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
                 }
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .weight(.5f)
+                        .weight(0.5f)
                         .fillMaxHeight()
                         .background(
-                            if (!auto.value) Color(
-                                0x5C5CE35C
-                            ) else Color.Transparent
+                            if (!auto.value) Color(0xFF81C784) // Active state: lighter green
+                            else Color(0xFF4CAF50) // Inactive state: header green
                         )
-                        .clickable {
-                            auto.value = false
-                        }
-                ){
-                    Text("Manual")
+                        .clickable { auto.value = false }
+                ) {
+                    Text(
+                        "Manual",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
                 }
             }
-            when(auto.value){
-                true -> AutoRecmmend(show,result,auto)
-                false -> ManualRecommend(show,result,auto)
+            when (auto.value) {
+                true -> AutoRecmmend(show, result, auto, input)
+                false -> ManualRecommend(show, result, auto, input)
             }
         }
         TopBarRec(info)
     }
+
 }
 
 @Composable
 fun PopUpScreenRecommendation(info: MutableState<Boolean>) {
+    val scale = remember { Animatable(0f) } // Initial scale set to 0
+    LaunchedEffect(Unit) {
+        scale.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing) // Smooth scaling
+        )
+    }
     Popup(
         alignment = Alignment.TopEnd,
         onDismissRequest = { info.value = false },
-        offset = _root_ide_package_.androidx.compose.ui.unit.IntOffset(x=-100,y=150)
+        offset = IntOffset(x = -100, y = 150)
     ) {
         Box(
             modifier = Modifier
-                .fillMaxWidth(.7f)
-                .fillMaxHeight(.5f)
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color.White)
-                .padding(10.dp)
-        ){
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(text = "Crop Recommendation Factors:", modifier = Modifier.padding(bottom = 12.dp))
-
+                .graphicsLayer(
+                    scaleX = scale.value,
+                    scaleY = scale.value,
+                    transformOrigin = TransformOrigin(1f, 0f)
+                )
+                .fillMaxWidth(0.7f)
+                .fillMaxHeight(0.5f)
+                .clip(RoundedCornerShape(15.dp)) // Enhanced roundness
+                .background(Color(0xFFE8F5E9)) // Light green background for consistency // Add a green border
+                .padding(5.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(10.dp)
+                    .fillMaxSize()
+            ) {
+                // Header Text
                 Text(
-                    text = "• Soil Nutrients: NPK levels and pH influence crop growth and yield.",
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    text = "🌱 Crop Recommendation Factors:",
+                    modifier = Modifier.padding(bottom = 12.dp),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF4CAF50) // Green header
                 )
 
-                Text(
-                    text = "• Climate: Factors like temperature, humidity, and rainfall determine crop suitability.",
-                    modifier = Modifier.padding(bottom = 8.dp)
+                // Information Texts
+                val factors = listOf(
+                    "Soil Nutrients: NPK levels and pH influence crop growth and yield.",
+                    "Climate: Factors like temperature, humidity, and rainfall determine crop suitability.",
+                    "Water Requirements: Ensure the crop's water needs align with local conditions.",
+                    "Growing Season: Choose crops suitable for the season and weather patterns."
                 )
 
-                Text(
-                    text = "• Water Requirements: Ensure the crop's water needs align with local conditions.",
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
-                Text(
-                    text = "• Growing Season: Choose crops suitable for the season and weather patterns.",
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+                factors.forEach { text ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = null,
+                            modifier = Modifier.size(10.dp)
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            text = text,
+                            fontSize = 16.sp,
+                            color = Color.Black, // Green text
+                            lineHeight = 20.sp
+                        )
+                    }
+                }
             }
         }
     }
 }
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ResultsPagecrop(show: MutableState<Boolean>, result: MutableState<CropRecommendationModel?>) {
+fun ResultsPagecrop(
+    show: MutableState<Boolean>,
+    result: MutableState<CropRecommendationModel?>,
+    input: MutableState<CropRecReq?>
+) {
     val state= rememberModalBottomSheetState()
     val translate = remember { mutableStateOf(false) }
     ModalBottomSheet(
@@ -198,134 +267,14 @@ fun ResultsPagecrop(show: MutableState<Boolean>, result: MutableState<CropRecomm
     ) {
         when(result.value){
             null->{
-                Text("unable to Predict")
+                Unable(listOf(
+                    "Check Internet Connection",
+                    "Server May be offline",
+                    "Retry again"
+                ))
             }
             else -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(10.dp)
-                        .verticalScroll(state = rememberScrollState(), enabled = true)
-                ) {
-                    Row(
-                        modifier = Modifier.height(60.dp).fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Color(0x884C8325)),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Found It...!!")
-                        Icon(painter = painterResource(R.drawable.translate_svgrepo_com), contentDescription = ""
-                            , modifier = Modifier.height(30.dp).clickable{
-                                translate.value= ! translate.value
-                            }
-                        )
-                    }
-                    Text("Name", fontSize = 18.sp, color = Color(0xBA313131))
-                    Spacer(
-                        Modifier
-                            .fillMaxWidth(.7f)
-                            .height(1.dp)
-                            .border(color = Color.Black, width = 1.dp))
-                    Row(
-                        modifier = Modifier
-                            .height(70.dp)
-                            .padding(start = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        Text(
-                            if(translate.value)
-                                result.value?.kannadaName?:""
-                            else
-                                result.value?.name?:""
-                        )
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    Text("Scientific Name", fontSize = 18.sp, color = Color(0xBA313131))
-                    Spacer(
-                        Modifier
-                            .fillMaxWidth(.7f)
-                            .height(1.dp)
-                            .border(color = Color.Black, width = 1.dp))
-                    Row(
-                        modifier = Modifier
-                            .height(70.dp)
-                            .padding(start = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        Text(result.value?.scientificName?:"")
-                    }
-                    Text("Climate Requirements", fontSize = 18.sp, color = Color(0xBA313131))
-                    Spacer(
-                        Modifier
-                            .fillMaxWidth(.7f)
-                            .height(1.dp)
-                            .border(color = Color.Black, width = 1.dp))
-                    Row(
-                        modifier = Modifier
-                            .height(70.dp)
-                            .padding(start = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        Text(result.value?.climateRequirements?:"")
-                    }
-                    Text("Soil Type", fontSize = 18.sp, color = Color(0xBA313131))
-                    Spacer(
-                        Modifier
-                            .fillMaxWidth(.7f)
-                            .height(1.dp)
-                            .border(color = Color.Black, width = 1.dp))
-                    Row(
-                        modifier = Modifier
-                            .height(70.dp)
-                            .padding(start = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        Text(result.value?.soilType?:"")
-                    }
-                    Text("Watering Needs", fontSize = 18.sp, color = Color(0xBA313131))
-                    Spacer(
-                        Modifier
-                            .fillMaxWidth(.7f)
-                            .height(1.dp)
-                            .border(color = Color.Black, width = 1.dp))
-                    Row(
-                        modifier = Modifier
-                            .height(70.dp)
-                            .padding(start = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        Text(result.value?.wateringNeeds?:"")
-                    }
-                    Text("Growing Season", fontSize = 18.sp, color = Color(0xBA313131))
-                    Spacer(
-                        Modifier
-                            .fillMaxWidth(.7f)
-                            .height(1.dp)
-                            .border(color = Color.Black, width = 1.dp))
-                    Row(
-                        modifier = Modifier
-                            .height(70.dp)
-                            .padding(start = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        Text(result.value?.growingSeason?:"")
-                    }
-                    Text("Tips", fontSize = 18.sp, color = Color(0xBA313131))
-                    Spacer(
-                        Modifier
-                            .fillMaxWidth(.7f)
-                            .height(1.dp)
-                            .border(color = Color.Black, width = 1.dp))
-                    Column(
-                        modifier = Modifier.padding( start = 20.dp, top = 20.dp),
-                    ){
-                        GetPoints(
-                            if(translate.value)
-                                result.value?.tips?.kannada
-                            else
-                                result.value?.tips?.english
-                        )
-                    }
-                }
+                ShowCropRecommendation(result.value,input.value)
             }
         }
     }
@@ -344,7 +293,8 @@ fun GetPoints(list: List<String>?) {
 fun ManualRecommend(
     show: MutableState<Boolean>,
     result: MutableState<CropRecommendationModel?>,
-    auto: MutableState<Boolean>
+    auto: MutableState<Boolean>,
+    input: MutableState<CropRecReq?>
 ) {
     var n = remember { mutableStateOf("") }
     var p = remember { mutableStateOf("") }
@@ -415,10 +365,13 @@ fun ManualRecommend(
         Spacer(Modifier.height(10.dp))
         GetTextField(rainfall,"Rainfall")
         Spacer(Modifier.height(10.dp))
-        Text("Incorrect or outdated input data may result in inaccurate crop recommendations. Double-check soil, climate, and NPK values for reliable suggestions.", color = Color.Red)
+        Text("Incorrect or outdated input data may result in inaccurate crop recommendations. Double-check soil, climate, and NPK values for reliable suggestions.", fontSize = 16.sp,color = Color.Red)
         Spacer(Modifier.height(10.dp))
         var enabled = remember { mutableStateOf(true) }
-        Row {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
             Button(
                 enabled = enabled.value,
                 onClick = {
@@ -460,13 +413,21 @@ fun ManualRecommend(
                                     }
                                 )
                             }
+                            input.value=req
                         }
                         show.value=true
                         enabled.value=true
                     }
-                }
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4CAF50), // Green button
+                    contentColor = Color.White
+                ),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                Text("Proceed")
+                Text("Proceed", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -476,32 +437,38 @@ fun ManualRecommend(
 fun AutoRecmmend(
     show: MutableState<Boolean>,
     result: MutableState<CropRecommendationModel?>,
-    auto: MutableState<Boolean>
+    auto: MutableState<Boolean>,
+    input: MutableState<CropRecReq?>
 ) {
     val pin = remember { mutableStateOf(userDetail.principal?.pin ?: "") }
     val scope = rememberCoroutineScope()
-    var enabled = remember { mutableStateOf(true) }
+    val enabled = remember { mutableStateOf(true) }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .background(Color(0xFFE8F5E9)) // Light green background for consistency
             .pointerInput(Unit) {
                 coroutineScope {
                     detectHorizontalSwipe(
                         onSwipeLeft = {
-                            Log.d("TAG", "AutoRecmmend: ")
+                            Log.d("TAG", "AutoRecmmend: Swipe Left")
                             auto.value = false
                         },
                         onSwipeRight = {
-
+                            // Add action if needed
                         }
                     )
                 }
             }
+            .padding(16.dp)
+            .clip(RoundedCornerShape(10.dp))
     ) {
+        // Pin code entry
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(10.dp),
+                .padding(8.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -512,78 +479,115 @@ fun AutoRecmmend(
                         pin.value = newValue
                     }
                 },
+                enabled=false,
                 modifier = Modifier
-                    .fillMaxWidth(0.5f)
+                    .fillMaxWidth(0.6f)
                     .clip(RoundedCornerShape(10.dp)),
-                label = {Text("Pin Code")},
+                label = { Text("Pin Code") },
                 keyboardOptions = KeyboardOptions.Default.copy(
-                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                    keyboardType = KeyboardType.Number
                 ),
                 textStyle = androidx.compose.ui.text.TextStyle(fontSize = 17.sp),
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
-                    unfocusedContainerColor = Color.White,
-                    focusedContainerColor = Color.White,
-                    cursorColor = Color(0xFF627362),
-                    focusedLabelColor = Color.Black,
+                    disabledContainerColor = Color.White,
+                    unfocusedContainerColor = Color(0xFFFFFFFF),
+                    focusedContainerColor = Color(0xFFFFFFFF),
+                    cursorColor = Color(0xFF4CAF50), // Green cursor
+                    focusedLabelColor = Color(0xFF4CAF50) // Green label
                 )
             )
         }
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(16.dp))
+
+        // Informative text
         Column(
-            Modifier
+            modifier = Modifier
                 .fillMaxWidth()
-                .padding(10.dp)
+                .padding(8.dp)
         ) {
-            Text("Provides crop recommendations based on soil NPK values, climate, and environmental data to maximize yield.", fontSize = 16.sp)
+            Text(
+                "Provides crop recommendations based on soil NPK values, climate, and environmental data to maximize yield.",
+                fontSize = 16.sp,
+                color = Color(0xFF4CAF50), // Green text
+                lineHeight = 20.sp
+            )
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Factors in real-time weather conditions, such as rainfall and temperature, for optimal crop selection.", fontSize = 16.sp)
+            Text(
+                "Factors in real-time weather conditions, such as rainfall and temperature, for optimal crop selection.",
+                fontSize = 16.sp,
+                color = Color(0xFF4CAF50),
+                lineHeight = 20.sp
+            )
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Adapts recommendations to local soil characteristics using pin code-based data retrieval.", fontSize = 16.sp)
+            Text(
+                "Adapts recommendations to local soil characteristics using pin code-based data retrieval.",
+                fontSize = 16.sp,
+                color = Color(0xFF4CAF50),
+                lineHeight = 20.sp
+            )
             Spacer(modifier = Modifier.height(16.dp))
-            Text("Warning: Recommendations are based on available data and may not consider unexpected local conditions or recent soil treatments. Always consult an expert for critical decisions."
-            , fontSize = 16.sp, color = Color.Red)
+            Text(
+                "Warning: Recommendations are based on available data and may not consider unexpected local conditions or recent soil treatments. Always consult an expert for critical decisions.",
+                fontSize = 16.sp,
+                color = Color.Red,
+                lineHeight = 20.sp
+            )
         }
 
-        Row {
+        // Proceed button
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
             Button(
                 enabled = enabled.value,
                 onClick = {
-                    enabled.value=false
-                    scope.launch{
+                    enabled.value = false
+                    scope.launch {
                         GlobalStates.globalStates.loading()
-                        val req=CropRecommendationReq(false,null)
-                        result.value= withContext(Dispatchers.IO){
+                        val req = CropRecommendationReq(false, null)
+                        result.value = withContext(Dispatchers.IO) {
                             getRecommendation(req)?.recommend
                         }
-                        if (result.value!=null){
-                            withContext(Dispatchers.IO){
+                        if (result.value != null) {
+                            withContext(Dispatchers.IO) {
                                 DataBaseObject.INSTANCE?.recommendationDao()?.save(
                                     RecommendationSave().apply {
                                         username = userDetail.username
-                                        timestamp = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-                                            Locale.getDefault()).apply {
+                                        timestamp = SimpleDateFormat(
+                                            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                                            Locale.getDefault()
+                                        ).apply {
                                             timeZone = TimeZone.getTimeZone("UTC")
                                         }.format(Date())
-                                        input = null
-                                        this.result=result.value
+                                        this.input = null
+                                        this.result = result.value
                                     }
                                 )
                             }
+                            input.value = req.data
                         }
-                        enabled.value=true
+                        enabled.value = true
                         GlobalStates.globalStates.notLoading()
-                        show.value=true
+                        show.value = true
                     }
-                }
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4CAF50), // Green button
+                    contentColor = Color.White
+                ),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                Text("Proceed")
+                Text("Proceed", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
         }
-
     }
 }
+
 
 @Composable
 fun TopBarRec(info: MutableState<Boolean>) {

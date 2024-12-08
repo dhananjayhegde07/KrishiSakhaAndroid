@@ -2,6 +2,9 @@ package com.example.myapplication.Screens.Login.home
 
 import android.annotation.SuppressLint
 import android.util.Log
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -43,8 +46,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
@@ -73,9 +79,11 @@ fun ChatScreen(){
     val official=rememberSaveable { mutableStateOf<Officials?>(null) }
     val init =rememberSaveable { mutableStateOf(false) }
     val chatId=rememberSaveable { mutableStateOf("") }
+    val loading = remember { mutableStateOf(true) }
     LaunchedEffect(Unit) {
         if (init.value) return@LaunchedEffect
         Log.d("TAG", "ChatScreen: ${init.value}")
+        loading.value = true
         GlobalStates.globalStates.chatList.clear()
         try {
             val res= withContext(Dispatchers.IO){ Retrofit.api.getOfficial()}
@@ -92,11 +100,25 @@ fun ChatScreen(){
             init.value=true
         } catch (e: Exception) {
             Log.e("TAG", "ChatScreen: ${e.message}", )
+        }finally {
+            loading.value=false
         }
+    }
+    if (loading.value){
+        Box(Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ){
+            Text("Loading...", color = Color.Green,)
+        }
+        return
     }
     when {
         official.value != null -> ChatScreenContent(official, connected,chatId)
-        official.value == null -> Unavailable()
+        official.value == null -> Unable(listOf(
+            "Check Your Internet connection",
+            "Server May be offline",
+            "Try again After some time"
+        ))
     }
 }
 
@@ -154,6 +176,7 @@ fun ChatScreenContent(
             onCancel = {close.value=false},
         )
     }
+
     Column(
         Modifier
             .fillMaxSize()
@@ -253,41 +276,67 @@ fun ChatInfoPop(
     official: MutableState<Officials?>,
     chatId: MutableState<String>
 ) {
+    val scale = remember { Animatable(0f) } // Initial scale set to 0
+    LaunchedEffect(info.value) {
+        scale.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+        )
+    }
     Popup(
         alignment = Alignment.TopEnd,
         onDismissRequest = { info.value = false },
         offset = _root_ide_package_.androidx.compose.ui.unit.IntOffset(x=-100,y=150)
     ) {
         Box(
-            modifier = Modifier.fillMaxWidth(.7f).fillMaxHeight(.5f).clip(RoundedCornerShape(10.dp))
+            modifier = Modifier.graphicsLayer(
+                scaleX = scale.value,
+                scaleY = scale.value,
+                transformOrigin = TransformOrigin(1f, 0f)
+                )
+                .fillMaxWidth(.7f).fillMaxHeight(.5f).clip(RoundedCornerShape(10.dp))
                 .background(Color.White).padding(10.dp)
         ){
             Column(modifier = Modifier.padding(16.dp)) {
-                Row (
+                // Header: "Chatting with"
+                Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
-                ){
-                    Text("Chatting with", fontSize = 18.sp)
+                ) {
+                    Text("Chatting with", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
+
                 Spacer(Modifier.height(20.dp))
-                Text("Name : ${official.value?.name?:""}")
+
+                // Name Text
+                Text("Name: ${official.value?.name ?: ""}", fontSize = 16.sp)
                 Spacer(Modifier.height(10.dp))
-                Text("Email : ${official.value?.email?:""}")
+
+                // Email Text
+                Text("Email: ${official.value?.email ?: ""}", fontSize = 16.sp)
                 Spacer(Modifier.height(10.dp))
-                Text("Phone : ${official.value?.phone?:""}")
-                Spacer(Modifier.height(10.dp))
-                Row (
+
+                // Phone Text
+                Text("Phone: ${official.value?.phone ?: ""}", fontSize = 16.sp)
+                Spacer(Modifier.height(20.dp))
+
+                // Header: "Session Info"
+                Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
-                ){
-                    Text("Session Info", fontSize = 18.sp)
+                ) {
+                    Text("Session Info", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
+
                 Spacer(Modifier.height(20.dp))
-                Text("Chat ID : ${chatId.value}")
+
+                // Chat ID Text
+                Text("Chat ID: ${chatId.value}", fontSize = 16.sp)
                 Spacer(Modifier.height(10.dp))
             }
+
         }
     }
 }
