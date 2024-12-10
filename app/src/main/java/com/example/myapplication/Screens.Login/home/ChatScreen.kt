@@ -118,7 +118,7 @@ fun ChatScreen(){
             "Check Your Internet connection",
             "Server May be offline",
             "Try again After some time"
-        ))
+        ),painterResource(R.drawable.error_inspect_ios11_svgrepo_com))
     }
 }
 
@@ -135,10 +135,12 @@ fun ChatScreenContent(
     var chatList= GlobalStates.globalStates.chatList
     DisposableEffect(Unit) {
         SocketManager.socket?.on("msg") { args->
+            Log.d("TAG", "ChatScreenContent: ${args[0]::class}")
             val now= Gson().fromJson<MessageDTO>(args[0].toString(), MessageDTO::class.java)
             chatList.add(now.message)
         }
         disp.value = true
+        Log.d("TAG", "ChatScreenContent: msg set")
         onDispose {
             SocketManager.socket?.off("msg")
         }
@@ -150,7 +152,11 @@ fun ChatScreenContent(
     val scope = rememberCoroutineScope()
     if(info.value){
         ChatInfoPop(info,official,chatId)
-        Box(Modifier.fillMaxSize().background(Color(0x70282828)).zIndex(1f))
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color(0x70282828))
+                .zIndex(1f))
     }
     if (close.value){
         ChatAlert(
@@ -289,13 +295,17 @@ fun ChatInfoPop(
         offset = _root_ide_package_.androidx.compose.ui.unit.IntOffset(x=-100,y=150)
     ) {
         Box(
-            modifier = Modifier.graphicsLayer(
-                scaleX = scale.value,
-                scaleY = scale.value,
-                transformOrigin = TransformOrigin(1f, 0f)
+            modifier = Modifier
+                .graphicsLayer(
+                    scaleX = scale.value,
+                    scaleY = scale.value,
+                    transformOrigin = TransformOrigin(1f, 0f)
                 )
-                .fillMaxWidth(.7f).fillMaxHeight(.5f).clip(RoundedCornerShape(10.dp))
-                .background(Color.White).padding(10.dp)
+                .fillMaxWidth(.7f)
+                .fillMaxHeight(.5f)
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color.White)
+                .padding(10.dp)
         ){
             Column(modifier = Modifier.padding(16.dp)) {
                 // Header: "Chatting with"
@@ -370,13 +380,13 @@ fun MesseggeList() {
                     modifier = Modifier
                         .height(20.dp)
                         .clickable {
-                            if (transText.value!=""){
-                                transText.value=""
+                            if (transText.value != "") {
+                                transText.value = ""
                                 return@clickable
                             }
                             translateEnglishToKannada(chatlist[it].msg,
                                 { text ->
-                                    transText.value=text
+                                    transText.value = text
                                 },
                                 { err ->
                                     Log.d("TAG", "MesseggeList: $err")
@@ -390,7 +400,11 @@ fun MesseggeList() {
                         .heightIn(min = 50.dp)
                         .widthIn(min = 50.dp, max = (0.7 * screenwidth).dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(if (chatlist[it].from==userDetail.username) Color(0xD03B9F61) else Color(0xFFCBCBCB))
+                        .background(
+                            if (chatlist[it].from == userDetail.username) Color(0xD03B9F61) else Color(
+                                0xFFCBCBCB
+                            )
+                        )
                         .padding(10.dp),
                     contentAlignment = Alignment.Center
                 ){
@@ -456,9 +470,11 @@ fun TopChatBar(official: MutableState<Officials?>, info: MutableState<Boolean>) 
         }
         Text(text = official.value?.name.toString(), fontSize = 20.sp)
         Icon(painter = painterResource(R.drawable.info_circle_svgrepo_com), contentDescription = ""
-            , modifier = Modifier.height(30.dp).clickable{
-                info.value=true
-            }
+            , modifier = Modifier
+                .height(30.dp)
+                .clickable {
+                    info.value = true
+                }
         )
     }
 }
@@ -475,10 +491,10 @@ fun MenuBox(close: MutableState<Boolean>) {
             .clip(RoundedCornerShape(50))
             .background(Color.White)
             .clickable {
-                close.value=true
+                close.value = true
             }
     ){
-        Icon(painter = painterResource(R.drawable.menu_dots_circle_svgrepo_com), contentDescription = "",
+        Icon(painter = painterResource(R.drawable.close_circle_svgrepo_com), contentDescription = "",
             modifier = Modifier.scale(.6f)
         )
     }

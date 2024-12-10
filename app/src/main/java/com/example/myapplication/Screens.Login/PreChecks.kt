@@ -1,5 +1,6 @@
 package com.example.myapplication.Screens.Login
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavController
@@ -26,6 +27,7 @@ fun PreChecks(navController: NavController){
         userDetail.principal= withContext(Dispatchers.IO){
             DataBaseObject.getDao()?.getPrincipal(username.toString())
         }
+        Log.d("TAG", "PreChecks: ${userDetail.jwt}")
         SocketManager.init()
         navController.navigate("home"){
             popUpTo(navController.graph.startDestinationId){inclusive=true}

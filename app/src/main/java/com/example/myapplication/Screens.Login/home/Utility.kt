@@ -76,7 +76,6 @@ fun ResultsPage(
 ){
     val sheetState= rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val scope= rememberCoroutineScope()
-    val translate = remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         if (result.value?.detected==true){
@@ -110,23 +109,14 @@ fun ResultsPage(
                     "Check Internet Connection",
                     "Server May be offline",
                     "Retry again"
-                ))
+                ),painterResource(R.drawable.error_inspect_ios11_svgrepo_com))
             }
             result.value?.detected == false -> {
-                Column (
-                    Modifier.fillMaxWidth()
-                ){
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center) {
-                        Text("Failed...")
-                    }
-                    Spacer(Modifier.height(20.dp))
-                    Text("Cannot Find Diseases")
-                    Spacer(Modifier.height(20.dp))
-                    Text("Image may be incorrect")
-                    Spacer(Modifier.height(20.dp))
-                    Text("Object may be incorrect")
-                }
+                Unable(listOf(
+                    "Object may be incorrect",
+                    "Image may be incorrect",
+                    "Cannot Find Diseases"
+                ),painterResource(R.drawable.file_wrong_svgrepo_com))
             }
             else -> {
                 ShowRes(result.value?.disease,outputFile)
@@ -243,7 +233,7 @@ fun CustomRow(text: String) {
 
 
 @Composable
-fun Unable(causes: List<String>){
+fun Unable(causes: List<String>,painter: Painter){
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -253,7 +243,7 @@ fun Unable(causes: List<String>){
     ) {
         // Display the icon
         Icon(
-            painter = painterResource(R.drawable.error_inspect_ios11_svgrepo_com),
+            painter = painter,
             contentDescription = null,
             modifier = Modifier
                 .size(120.dp)

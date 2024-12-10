@@ -385,7 +385,7 @@ fun ResultsPageFer(
                     "Check Internet Connection",
                     "Server May be offline",
                     "Retry again"
-                ))
+                ),painterResource(R.drawable.error_inspect_ios11_svgrepo_com))
             }
             else -> {
                 ShowFertilizerRecommendation(result.value,input.value)

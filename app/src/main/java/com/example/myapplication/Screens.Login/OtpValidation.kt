@@ -153,7 +153,9 @@ fun OTPVerificationScreen(
                         scope.launch(Dispatchers.IO){
                             val res=validate(otp.value,currentId.value)
                             if (res==null) return@launch
-                            navController.navigate("login")
+                            withContext(Dispatchers.Main){
+                                navController.navigate("login")
+                            }
                         }
                         isSubmitting.value = false
                     }
