@@ -188,6 +188,9 @@ fun ShowRes(result: DiseasesModel?, outputFile: File) {
             }
         }
         Section("Name",if(showKannada.value) result?.kannadaName else result?.className)
+        if(result?.className?.toLowerCase()?.contains("healthy") == true){
+            return
+        }
         Section("Description",if(showKannada.value) result?.kannadaDescription else result?.description)
         Section("Cause",if(showKannada.value) result?.kannadaCause else result?.cause)
         var list=result?.recommendedActions?.map {
@@ -342,6 +345,11 @@ fun FloatingButton(navController: NavController){
                                 menuExpanded.value=false
                                 navController.navigate("crop")
                             })
+                            Spacer(Modifier.height(10.dp))
+                            ItemMenu(painterResource(R.drawable.edit_3_svgrepo_com)) {
+                                menuExpanded.value=false
+                                navController.navigate("pest")
+                            }
                         }
                     }
                 }

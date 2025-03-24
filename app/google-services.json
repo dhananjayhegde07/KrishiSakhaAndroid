@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "342571898609",
+    "project_id": "plasma-centaur-400507",
+    "storage_bucket": "plasma-centaur-400507.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:342571898609:android:11466c4eb8f3ba7a1fbb50",
+        "android_client_info": {
+          "package_name": "com.example.myapplication"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBMb8dfcV0EtjgUncMNt8d6RoArIAdjUT4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

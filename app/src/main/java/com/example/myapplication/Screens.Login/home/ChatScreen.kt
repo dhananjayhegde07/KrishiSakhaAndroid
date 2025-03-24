@@ -8,6 +8,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -68,6 +69,7 @@ import com.example.myapplication.singleton.translateEnglishToKannada
 import com.example.myapplication.singleton.userDetail
 import com.example.myapplication.utils.Officials
 import com.google.gson.Gson
+import io.socket.client.Ack
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -75,7 +77,7 @@ import kotlinx.coroutines.withContext
 @SuppressLint("MutableCollectionMutableState")
 @Composable
 fun ChatScreen(){
-    val connected= rememberSaveable { mutableStateOf(true) }
+    val connected= rememberSaveable { mutableStateOf(false) }
     val official=rememberSaveable { mutableStateOf<Officials?>(null) }
     val init =rememberSaveable { mutableStateOf(false) }
     val chatId=rememberSaveable { mutableStateOf("") }
@@ -85,6 +87,7 @@ fun ChatScreen(){
         Log.d("TAG", "ChatScreen: ${init.value}")
         loading.value = true
         GlobalStates.globalStates.chatList.clear()
+        connected.value= SocketManager.socket?.connected() == true
         try {
             val res= withContext(Dispatchers.IO){ Retrofit.api.getOfficial()}
             Log.d("TAG", "ChatScreen: ${res.chatID}")
@@ -150,8 +153,9 @@ fun ChatScreenContent(
     val info = remember { mutableStateOf(false) }
     val close = remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+
     if(info.value){
-        ChatInfoPop(info,official,chatId)
+        ChatInfoPop(info,official,chatId,connected)
         Box(
             Modifier
                 .fillMaxSize()
@@ -227,8 +231,9 @@ fun ChatScreenContent(
                                 msg = msg.value,
                                 index = 0
                             )
+                            if (msg.value == "") return@clickable
                             sendMSg(MessageDTO(chatId.value, current))
-                            if (msg.value != "") GlobalStates.globalStates.chatList.add(current)
+                            GlobalStates.globalStates.chatList.add(current)
                             msg.value = ""
                         }
                     , contentAlignment = Alignment.Center
@@ -280,7 +285,8 @@ fun ChatAlert(onClose: () -> Unit,
 fun ChatInfoPop(
     info: MutableState<Boolean>,
     official: MutableState<Officials?>,
-    chatId: MutableState<String>
+    chatId: MutableState<String>,
+    connected: MutableState<Boolean>
 ) {
     val scale = remember { Animatable(0f) } // Initial scale set to 0
     LaunchedEffect(info.value) {
@@ -345,6 +351,7 @@ fun ChatInfoPop(
                 // Chat ID Text
                 Text("Chat ID: ${chatId.value}", fontSize = 16.sp)
                 Spacer(Modifier.height(10.dp))
+                Text("Connection Status: ${if (connected.value) "Connected" else "Disconnected"}", fontSize = 16.sp)
             }
 
         }
@@ -434,10 +441,12 @@ fun NotConnected() {
     }
 }
 
-fun sendMSg(messege: MessageDTO){
+fun sendMSg(messege: MessageDTO,){
     if (messege.message.msg=="") return
     Log.d("TAG", "sendMSg: ${messege}")
-    SocketManager.socket?.emit("send", Gson().toJson(messege))
+    SocketManager.socket?.emit("send", Gson().toJson(messege), Ack{
+
+    })
 }
 
 
@@ -468,11 +477,12 @@ fun TopChatBar(official: MutableState<Officials?>, info: MutableState<Boolean>) 
                 modifier = Modifier.scale(.6f)
             )
         }
+        val btn = remember { MutableInteractionSource() }
         Text(text = official.value?.name.toString(), fontSize = 20.sp)
         Icon(painter = painterResource(R.drawable.info_circle_svgrepo_com), contentDescription = ""
             , modifier = Modifier
                 .height(30.dp)
-                .clickable {
+                .clickable(indication = null, interactionSource = btn) {
                     info.value = true
                 }
         )
@@ -494,7 +504,7 @@ fun MenuBox(close: MutableState<Boolean>) {
                 close.value = true
             }
     ){
-        Icon(painter = painterResource(R.drawable.close_circle_svgrepo_com), contentDescription = "",
+        Icon(painter = painterResource(R.drawable.contact2), contentDescription = "",
             modifier = Modifier.scale(.6f)
         )
     }

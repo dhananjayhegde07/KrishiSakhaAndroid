@@ -9,6 +9,7 @@ import com.example.myapplication.DTO.LoginReq
 import com.example.myapplication.DTO.LoginRes
 import com.example.myapplication.DTO.OtpReq
 import com.example.myapplication.DTO.OtpRes
+import com.example.myapplication.DTO.PestRecommend
 import com.example.myapplication.DTO.PredictionFerReq
 import com.example.myapplication.DTO.PredictionFerRes
 import com.example.myapplication.DTO.ResendOtpReq
@@ -56,6 +57,12 @@ interface ApiService {
         @Part() image: MultipartBody.Part,
         @Part("data") data: DetectReq
     ): DetectRes
+
+    @Multipart
+    @POST("/predict/pest")
+    suspend fun pest(
+        @Part() image: MultipartBody.Part
+    ): PestRecommend
 
     @POST("/predict/fertilizer")
     suspend fun predictFertilizer(@Body data: PredictionFerReq): PredictionFerRes

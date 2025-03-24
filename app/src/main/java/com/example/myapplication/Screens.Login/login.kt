@@ -41,11 +41,9 @@ import com.example.myapplication.SnackBar
 import com.example.myapplication.retrofit.Retrofit
 import com.example.myapplication.singleton.SharedPreference
 import com.example.myapplication.singleton.userDetail
-import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import retrofit2.HttpException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -147,13 +145,10 @@ fun Login(navController: NavController){
 suspend fun loginSubmit(username:String, password:String): LoginRes{
     return try {
         Retrofit.api.login(LoginReq(username,password))
-    } catch (e: HttpException){
-        Gson().fromJson(e.response()?.errorBody()?.string(), LoginRes::class.java ) ?: LoginRes()
+    } catch (e: Exception){
+        Log.d("Login error", "loginSubmit: ${e.message}")
+        return LoginRes()
     }
-    catch (e: Exception){
-        LoginRes()
-    }
-
 }
 
 

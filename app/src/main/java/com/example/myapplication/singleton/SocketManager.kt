@@ -12,7 +12,7 @@ object SocketManager {
             val options=IO.Options().apply {
                 auth=mapOf("token" to userDetail.jwt)
             }
-            socket=IO.socket("http://192.168.186.253:3000/",options)
+            socket=IO.socket("http://192.168.108.253:3000/",options)
             socket?.connect()
             Log.d("TAG", "init: ${socket?.connected()}")
             // Optionally, handle connect and disconnect events

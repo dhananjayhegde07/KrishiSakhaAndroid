@@ -21,6 +21,7 @@ import com.example.myapplication.Screens.Login.OTPVerificationScreen
 import com.example.myapplication.Screens.Login.PreChecks
 import com.example.myapplication.Screens.Login.ResetScreen
 import com.example.myapplication.Screens.Login.home.CameraScreen
+import com.example.myapplication.Screens.Login.home.CameraScreen_pestiside
 import com.example.myapplication.Screens.Login.home.ChatScreen
 import com.example.myapplication.Screens.Login.home.CropRecommendScreen
 import com.example.myapplication.Screens.Login.home.DrawerInit
@@ -98,7 +99,9 @@ fun App(){
         composable("recent/{id}"){
             RecentPage(it.arguments?.getString("id"))
         }
-
+        composable("pest"){
+            CameraScreen_pestiside()
+        }
     }
 
     if (GlobalStates.globalStates.loadingScreen.value){
